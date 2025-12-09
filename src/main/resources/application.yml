@@ -1,0 +1,91 @@
+server:
+  port: 8084
+
+spring:
+  application:
+    name: document-storage-service
+
+  # MongoDB configuration
+  data:
+    mongodb:
+      host: ${MONGODB_HOST:localhost}
+      port: ${MONGODB_PORT:27017}
+      database: ${MONGODB_DATABASE:document_storage}
+      username: ${MONGODB_USERNAME:}
+      password: ${MONGODB_PASSWORD:}
+      auto-index-creation: true
+
+  # Kafka configuration
+  kafka:
+    bootstrap-servers: ${KAFKA_BROKERS:localhost:9092}
+    consumer:
+      group-id: document-storage-service
+      auto-offset-reset: earliest
+      enable-auto-commit: false
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: "com.invoice.*"
+
+  # Servlet configuration for multipart file uploads
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 50MB
+      max-request-size: 50MB
+
+# Eureka service discovery
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: ${EUREKA_SERVER:http://localhost:8761/eureka/}
+    enabled: ${EUREKA_ENABLED:true}
+  instance:
+    preferIpAddress: true
+    instance-id: ${spring.application.name}:${random.value}
+
+# Kafka topics
+kafka:
+  topics:
+    pdf-generated: pdf.generated
+    document-stored: document.stored
+
+# Application configuration
+app:
+  storage:
+    provider: ${STORAGE_PROVIDER:local}  # local or s3
+    local:
+      base-path: ${LOCAL_STORAGE_PATH:/var/documents}
+      base-url: ${STORAGE_BASE_URL:http://localhost:8084/api/v1/documents}
+    s3:
+      bucket-name: ${S3_BUCKET_NAME:invoice-documents}
+      region: ${AWS_REGION:us-east-1}
+      access-key: ${AWS_ACCESS_KEY:}
+      secret-key: ${AWS_SECRET_KEY:}
+      base-url: ${S3_BASE_URL:}
+      # For S3-compatible storage (Ceph, MinIO, etc.)
+      endpoint: ${S3_ENDPOINT:}
+      path-style-access: ${S3_PATH_STYLE_ACCESS:false}
+
+# Actuator endpoints
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: always
+  health:
+    mongo:
+      enabled: true
+
+# Logging
+logging:
+  level:
+    com.invoice.storage: DEBUG
+    org.springframework.data.mongodb: INFO
+    org.springframework.kafka: INFO
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
