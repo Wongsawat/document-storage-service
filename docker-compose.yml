@@ -1,0 +1,205 @@
+version: '3.8'
+
+services:
+  # Zookeeper - Required by Kafka
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.5.0
+    container_name: document-storage-zookeeper
+    hostname: zookeeper
+    ports:
+      - "2181:2181"
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+      ZOOKEEPER_SYNC_LIMIT: 2
+    volumes:
+      - zookeeper_data:/var/lib/zookeeper/data
+      - zookeeper_logs:/var/lib/zookeeper/log
+    networks:
+      - document-storage-network
+    restart: unless-stopped
+
+  # Kafka - Event streaming platform
+  kafka:
+    image: confluentinc/cp-kafka:7.5.0
+    container_name: document-storage-kafka
+    hostname: kafka
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+      - "29092:29092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_LOG_RETENTION_HOURS: 168
+    volumes:
+      - kafka_data:/var/lib/kafka/data
+    networks:
+      - document-storage-network
+    healthcheck:
+      test: ["CMD-SHELL", "kafka-broker-api-versions --bootstrap-server=localhost:9092 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+
+  # MongoDB - Document metadata storage
+  mongodb:
+    image: mongo:7.0
+    container_name: document-storage-mongodb
+    hostname: mongodb
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGODB_ROOT_USERNAME:-admin}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGODB_ROOT_PASSWORD:-admin123}
+      MONGO_INITDB_DATABASE: document_storage
+    volumes:
+      - mongodb_data:/data/db
+      - mongodb_config:/data/configdb
+      - ./docker/mongodb-init:/docker-entrypoint-initdb.d
+    networks:
+      - document-storage-network
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    restart: unless-stopped
+
+  # Document Storage Service
+  document-storage-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: document-storage-service:latest
+    container_name: document-storage-service
+    hostname: document-storage
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    ports:
+      - "8084:8084"
+    environment:
+      # MongoDB Configuration
+      MONGODB_HOST: mongodb
+      MONGODB_PORT: 27017
+      MONGODB_DATABASE: document_storage
+      MONGODB_USERNAME: ${MONGODB_USERNAME:-docuser}
+      MONGODB_PASSWORD: ${MONGODB_PASSWORD:-docuser123}
+
+      # Kafka Configuration
+      KAFKA_BROKERS: kafka:29092
+
+      # Storage Configuration - Local (default)
+      STORAGE_PROVIDER: ${STORAGE_PROVIDER:-local}
+      LOCAL_STORAGE_PATH: /var/documents
+      STORAGE_BASE_URL: http://localhost:8084/api/v1/documents
+
+      # Storage Configuration - S3 (uncomment to use)
+      # STORAGE_PROVIDER: s3
+      # S3_BUCKET_NAME: ${S3_BUCKET_NAME:-invoice-documents}
+      # AWS_REGION: ${AWS_REGION:-us-east-1}
+      # AWS_ACCESS_KEY: ${AWS_ACCESS_KEY}
+      # AWS_SECRET_KEY: ${AWS_SECRET_KEY}
+
+      # Service Discovery
+      EUREKA_ENABLED: ${EUREKA_ENABLED:-false}
+      EUREKA_SERVER: ${EUREKA_SERVER:-http://eureka:8761/eureka/}
+
+      # JVM Options
+      JAVA_OPTS: -Xms512m -Xmx1536m -XX:+UseG1GC -XX:MaxGCPauseMillis=200
+
+      # Logging
+      LOGGING_LEVEL_COM_INVOICE_STORAGE: ${LOG_LEVEL:-INFO}
+      LOGGING_LEVEL_ORG_SPRINGFRAMEWORK_DATA_MONGODB: INFO
+      LOGGING_LEVEL_ORG_SPRINGFRAMEWORK_KAFKA: INFO
+
+    volumes:
+      # Local document storage (only used when STORAGE_PROVIDER=local)
+      - document_storage:/var/documents
+      # Application logs (optional)
+      - ./logs:/app/logs
+    networks:
+      - document-storage-network
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8084/actuator/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    restart: unless-stopped
+
+  # Kafka UI (Optional - for development/debugging)
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: document-storage-kafka-ui
+    depends_on:
+      - kafka
+    ports:
+      - "8090:8080"
+    environment:
+      KAFKA_CLUSTERS_0_NAME: local
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:29092
+      KAFKA_CLUSTERS_0_ZOOKEEPER: zookeeper:2181
+    networks:
+      - document-storage-network
+    profiles:
+      - debug
+    restart: unless-stopped
+
+  # MongoDB Express (Optional - for development/debugging)
+  mongo-express:
+    image: mongo-express:latest
+    container_name: document-storage-mongo-express
+    depends_on:
+      - mongodb
+    ports:
+      - "8081:8081"
+    environment:
+      ME_CONFIG_MONGODB_ADMINUSERNAME: ${MONGODB_ROOT_USERNAME:-admin}
+      ME_CONFIG_MONGODB_ADMINPASSWORD: ${MONGODB_ROOT_PASSWORD:-admin123}
+      ME_CONFIG_MONGODB_URL: mongodb://${MONGODB_ROOT_USERNAME:-admin}:${MONGODB_ROOT_PASSWORD:-admin123}@mongodb:27017/
+      ME_CONFIG_BASICAUTH_USERNAME: ${MONGO_EXPRESS_USERNAME:-admin}
+      ME_CONFIG_BASICAUTH_PASSWORD: ${MONGO_EXPRESS_PASSWORD:-pass}
+    networks:
+      - document-storage-network
+    profiles:
+      - debug
+    restart: unless-stopped
+
+# Volumes for data persistence
+volumes:
+  zookeeper_data:
+    driver: local
+  zookeeper_logs:
+    driver: local
+  kafka_data:
+    driver: local
+  mongodb_data:
+    driver: local
+  mongodb_config:
+    driver: local
+  document_storage:
+    driver: local
+
+# Network configuration
+networks:
+  document-storage-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.25.0.0/16

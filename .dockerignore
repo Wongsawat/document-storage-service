@@ -1,8 +1,74 @@
-target/
+# Git
 .git/
 .gitignore
-*.md
-.mvn/
+.gitattributes
+
+# IDE
 .idea/
-*.iml
 .vscode/
+*.iml
+*.ipr
+*.iws
+.project
+.classpath
+.settings/
+.metadata/
+
+# Build outputs
+target/
+build/
+out/
+*.jar
+*.war
+*.ear
+*.class
+
+# Logs
+logs/
+*.log
+
+# Test reports
+test-results/
+coverage/
+
+# Documentation (will be in image from source)
+*.md
+!README.md
+
+# Docker
+docker-compose*.yml
+Dockerfile
+.dockerignore
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# OS
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# Maven
+.mvn/
+mvnw
+mvnw.cmd
+
+# Application runtime
+application-local.yml
+application-dev.yml
+application-*.properties
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.bak
+
+# Data directories
+data/
+documents/
+docker/
