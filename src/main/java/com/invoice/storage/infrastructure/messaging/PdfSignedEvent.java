@@ -28,6 +28,7 @@ public class PdfSignedEvent implements Serializable {
     // Invoice identifiers
     private String invoiceId;
     private String invoiceNumber;
+    private String documentType;
 
     // Signed document details
     private String signedDocumentId;

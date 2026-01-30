@@ -47,7 +47,7 @@ eureka:
 # Kafka topics
 kafka:
   topics:
-    pdf-signed: pdf.signed
+    pdf-storage-requested: pdf-storage-requested
     document-stored: document.stored
 
 # Application configuration

@@ -26,17 +26,17 @@ public class PdfEventListener {
     private final HttpClient httpClient = HttpClient.newHttpClient();
 
     /**
-     * Listen to pdf.signed topic and store signed PDFs
+     * Listen to pdf-storage-requested topic and store signed PDFs
      */
     @KafkaListener(
-        topics = "${kafka.topics.pdf-signed}",
+        topics = "${kafka.topics.pdf-storage-requested}",
         groupId = "${spring.kafka.consumer.group-id}",
         containerFactory = "kafkaListenerContainerFactory"
     )
     public void handlePdfSigned(PdfSignedEvent event) {
         try {
-            log.info("Received PdfSignedEvent: invoiceId={}, signedPdfUrl={}, signatureLevel={}",
-                event.getInvoiceId(), event.getSignedPdfUrl(), event.getSignatureLevel());
+            log.info("Received PdfSignedEvent: invoiceId={}, signedPdfUrl={}, signatureLevel={}, documentType={}",
+                event.getInvoiceId(), event.getSignedPdfUrl(), event.getSignatureLevel(), event.getDocumentType());
 
             // Download signed PDF from the URL provided by PDF signing service
             byte[] pdfContent = downloadPdf(event.getSignedPdfUrl());
@@ -44,12 +44,15 @@ public class PdfEventListener {
             // Extract filename from URL or create default
             String fileName = extractFileName(event.getSignedPdfUrl(), event.getInvoiceNumber());
 
+            // Map documentType to appropriate DocumentType
+            DocumentType documentType = mapDocumentType(event.getDocumentType());
+
             // Store signed PDF document
             StoredDocument document = storageService.storeDocument(
                 pdfContent,
                 fileName,
                 "application/pdf",
-                DocumentType.INVOICE_PDF,
+                documentType,
                 event.getInvoiceId(),
                 event.getInvoiceNumber()
             );
@@ -109,5 +112,23 @@ public class PdfEventListener {
             log.warn("Could not extract filename from URL: {}, using default", url);
             return invoiceNumber + "_invoice.pdf";
         }
+    }
+
+    /**
+     * Map document type from PdfSignedEvent to DocumentType enum
+     */
+    private DocumentType mapDocumentType(String documentType) {
+        if (documentType == null) {
+            return DocumentType.OTHER;
+        }
+
+        return switch (documentType.toUpperCase()) {
+            case "INVOICE", "TAX_INVOICE", "RECEIPT", "DEBIT_CREDIT_NOTE",
+                 "CANCELLATION_NOTE", "ABBREVIATED_TAX_INVOICE" -> DocumentType.INVOICE_PDF;
+            default -> {
+                log.warn("Unknown document type: {}, using OTHER", documentType);
+                yield DocumentType.OTHER;
+            }
+        };
     }
 }
