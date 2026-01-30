@@ -11,9 +11,8 @@ spring:
       host: ${MONGODB_HOST:localhost}
       port: ${MONGODB_PORT:27017}
       database: ${MONGODB_DATABASE:document_storage}
-      username: ${MONGODB_USERNAME:}
-      password: ${MONGODB_PASSWORD:}
-      auto-index-creation: true
+      # username and password are optional - only set when provided
+      # auto-index-creation: true
 
   # Kafka configuration
   kafka:
@@ -34,6 +33,12 @@ spring:
       max-file-size: 50MB
       max-request-size: 50MB
 
+# Apache Camel configuration
+camel:
+  springboot:
+    name: document-storage-camel
+    main-run-controller: true
+
 # Eureka service discovery
 eureka:
   client:
@@ -44,14 +49,17 @@ eureka:
     preferIpAddress: true
     instance-id: ${spring.application.name}:${random.value}
 
-# Kafka topics
-kafka:
-  topics:
-    pdf-storage-requested: pdf-storage-requested
-    document-stored: document.stored
-
 # Application configuration
 app:
+  # Kafka configuration (used by Apache Camel routes)
+  kafka:
+    bootstrap-servers: ${KAFKA_BROKERS:localhost:9092}
+    topics:
+      pdf-storage-requested: pdf-storage-requested
+      document-stored: document.stored
+      dlq: document-storage.dlq
+
+  # Storage configuration
   storage:
     provider: ${STORAGE_PROVIDER:local}  # local or s3
     local:
@@ -72,7 +80,7 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info,metrics,prometheus
+        include: health,info,metrics,prometheus,camelroutes
   endpoint:
     health:
       show-details: always
@@ -84,6 +92,8 @@ management:
 logging:
   level:
     com.invoice.storage: DEBUG
+    org.apache.camel: INFO
+    org.apache.camel.component.kafka: DEBUG
     org.springframework.data.mongodb: INFO
     org.springframework.kafka: INFO
   pattern:
