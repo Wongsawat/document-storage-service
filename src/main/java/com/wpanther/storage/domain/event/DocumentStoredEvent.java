@@ -1,51 +1,94 @@
 package com.wpanther.storage.domain.event;
 
-import com.wpanther.storage.infrastructure.messaging.IntegrationEvent;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
-import lombok.experimental.SuperBuilder;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.wpanther.saga.domain.model.IntegrationEvent;
+import lombok.Getter;
 
-import java.io.Serializable;
-import java.time.LocalDateTime;
+import java.time.Instant;
+import java.util.UUID;
 
 /**
  * Event published when a document is successfully stored.
- *
  * Consumed by notification-service and other downstream services.
- * Extends IntegrationEvent for consistent event metadata across services.
  */
-@Data
-@EqualsAndHashCode(callSuper = true)
-@NoArgsConstructor
-@AllArgsConstructor
-@SuperBuilder
-public class DocumentStoredEvent extends IntegrationEvent implements Serializable {
+@Getter
+public class DocumentStoredEvent extends IntegrationEvent {
 
     private static final long serialVersionUID = 1L;
+    private static final String EVENT_TYPE = "document.stored";
 
-    // Event metadata (inherited from IntegrationEvent):
-    // - eventId: Unique identifier for this event
-    // - eventType: Will be set to "DOCUMENT_STORED"
-    // - occurredAt: Timestamp when the event occurred
-    // - version: Event schema version
-    // - correlationId: For request tracing across services
+    @JsonProperty("documentId")
+    private final String documentId;
 
-    // Document identifiers
-    private String documentId;
-    private String invoiceId;
-    private String invoiceNumber;
+    @JsonProperty("invoiceId")
+    private final String invoiceId;
 
-    // Storage details
-    private String fileName;
-    private String storageUrl;
-    private long fileSize;
-    private String checksum;
-    private String documentType;
+    @JsonProperty("invoiceNumber")
+    private final String invoiceNumber;
 
-    // Original signing metadata (from PdfSignedEvent)
-    private String signedDocumentId;
-    private String signatureLevel;
-    private LocalDateTime signatureTimestamp;
+    @JsonProperty("fileName")
+    private final String fileName;
+
+    @JsonProperty("storageUrl")
+    private final String storageUrl;
+
+    @JsonProperty("fileSize")
+    private final long fileSize;
+
+    @JsonProperty("checksum")
+    private final String checksum;
+
+    @JsonProperty("documentType")
+    private final String documentType;
+
+    @JsonProperty("correlationId")
+    private final String correlationId;
+
+    public DocumentStoredEvent(String documentId, String invoiceId, String invoiceNumber,
+                                String fileName, String storageUrl, long fileSize,
+                                String checksum, String documentType, String correlationId) {
+        super();
+        this.documentId = documentId;
+        this.invoiceId = invoiceId;
+        this.invoiceNumber = invoiceNumber;
+        this.fileName = fileName;
+        this.storageUrl = storageUrl;
+        this.fileSize = fileSize;
+        this.checksum = checksum;
+        this.documentType = documentType;
+        this.correlationId = correlationId;
+    }
+
+    @Override
+    public String getEventType() {
+        return EVENT_TYPE;
+    }
+
+    @JsonCreator
+    public DocumentStoredEvent(
+            @JsonProperty("eventId") UUID eventId,
+            @JsonProperty("occurredAt") Instant occurredAt,
+            @JsonProperty("eventType") String eventType,
+            @JsonProperty("version") int version,
+            @JsonProperty("documentId") String documentId,
+            @JsonProperty("invoiceId") String invoiceId,
+            @JsonProperty("invoiceNumber") String invoiceNumber,
+            @JsonProperty("fileName") String fileName,
+            @JsonProperty("storageUrl") String storageUrl,
+            @JsonProperty("fileSize") long fileSize,
+            @JsonProperty("checksum") String checksum,
+            @JsonProperty("documentType") String documentType,
+            @JsonProperty("correlationId") String correlationId) {
+        super(eventId, occurredAt, eventType, version);
+        this.documentId = documentId;
+        this.invoiceId = invoiceId;
+        this.invoiceNumber = invoiceNumber;
+        this.fileName = fileName;
+        this.storageUrl = storageUrl;
+        this.fileSize = fileSize;
+        this.checksum = checksum;
+        this.documentType = documentType;
+        this.correlationId = correlationId;
+    }
 }

@@ -1,47 +1,63 @@
 package com.wpanther.storage.infrastructure.messaging;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.wpanther.storage.domain.event.DocumentStoredEvent;
+import com.wpanther.saga.infrastructure.outbox.OutboxService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.camel.ProducerTemplate;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.HashMap;
+import java.util.Map;
 
 /**
- * Publisher for integration events using Apache Camel.
- *
- * Uses ProducerTemplate to send events to Camel direct endpoints,
- * which are then routed to Kafka topics by Camel routes.
+ * Publisher for domain events via outbox pattern.
+ * Events are written to the outbox table within a transaction,
+ * then published to Kafka by Debezium CDC.
  */
 @Component
 @RequiredArgsConstructor
 @Slf4j
 public class EventPublisher {
 
-    private final ProducerTemplate producerTemplate;
+    private static final String DOCUMENT_STORED_TOPIC = "document.stored";
+    private static final String AGGREGATE_TYPE = "StoredDocument";
 
-    /**
-     * Publish document stored event to Kafka via Camel direct route.
-     *
-     * Sends the event to "direct:publish-document-stored" endpoint,
-     * which is processed by DocumentStorageRouteConfig to publish
-     * to the "document.stored" Kafka topic.
-     *
-     * @param event the DocumentStoredEvent to publish
-     */
+    private final OutboxService outboxService;
+    private final ObjectMapper objectMapper;
+
+    @Transactional(propagation = Propagation.MANDATORY)
     public void publishDocumentStored(DocumentStoredEvent event) {
-        log.info("Publishing document stored event for document: {}", event.getDocumentId());
-        try {
-            producerTemplate.sendBodyAndHeader(
-                "direct:publish-document-stored",
+        Map<String, String> headers = new HashMap<>();
+        if (event.getCorrelationId() != null) {
+            headers.put("correlationId", event.getCorrelationId());
+        }
+        if (event.getInvoiceNumber() != null) {
+            headers.put("invoiceNumber", event.getInvoiceNumber());
+        }
+
+        outboxService.saveWithRouting(
                 event,
-                "kafka.KEY",
-                event.getDocumentId()
-            );
-            log.info("Successfully published document stored event: documentId={}, invoiceNumber={}",
+                AGGREGATE_TYPE,
+                event.getInvoiceId(),
+                DOCUMENT_STORED_TOPIC,
+                event.getInvoiceId(),
+                toJson(headers)
+        );
+
+        log.info("Published DocumentStoredEvent to outbox: documentId={}, invoiceNumber={}",
                 event.getDocumentId(), event.getInvoiceNumber());
-        } catch (Exception e) {
-            log.error("Failed to publish document stored event: documentId={}", event.getDocumentId(), e);
-            throw e;
+    }
+
+    private String toJson(Map<String, String> map) {
+        try {
+            return objectMapper.writeValueAsString(map);
+        } catch (JsonProcessingException e) {
+            log.warn("Failed to serialize headers to JSON", e);
+            return null;
         }
     }
 }

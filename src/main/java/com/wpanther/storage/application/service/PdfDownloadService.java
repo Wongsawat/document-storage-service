@@ -1,7 +1,6 @@
 package com.wpanther.storage.application.service;
 
 import com.wpanther.storage.domain.model.DocumentType;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
@@ -9,19 +8,25 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.time.Duration;
 
 /**
  * Service for downloading PDFs from URLs.
  *
- * Extracted from PdfEventListener for reuse in Camel routes.
  * Provides methods to download PDFs, extract filenames, and map document types.
  */
 @Service
-@RequiredArgsConstructor
 @Slf4j
 public class PdfDownloadService {
 
     private final HttpClient httpClient;
+
+    public PdfDownloadService() {
+        this.httpClient = HttpClient.newBuilder()
+                .connectTimeout(Duration.ofSeconds(30))
+                .followRedirects(HttpClient.Redirect.NORMAL)
+                .build();
+    }
 
     /**
      * Download PDF content from URL.

@@ -5,26 +5,32 @@ spring:
   application:
     name: document-storage-service
 
+  # PostgreSQL configuration (for outbox_events table)
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:documentstorage_db}
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:postgres}
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    locations: classpath:db/migration
+
   # MongoDB configuration
   data:
     mongodb:
       host: ${MONGODB_HOST:localhost}
       port: ${MONGODB_PORT:27017}
       database: ${MONGODB_DATABASE:document_storage}
-      # username and password are optional - only set when provided
-      # auto-index-creation: true
-
-  # Kafka configuration
-  kafka:
-    bootstrap-servers: ${KAFKA_BROKERS:localhost:9092}
-    consumer:
-      group-id: document-storage-service
-      auto-offset-reset: earliest
-      enable-auto-commit: false
-      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
-      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
-      properties:
-        spring.json.trusted.packages: "com.wpanther.*"
 
   # Servlet configuration for multipart file uploads
   servlet:
@@ -38,6 +44,9 @@ camel:
   springboot:
     name: document-storage-camel
     main-run-controller: true
+  dataformat:
+    jackson:
+      auto-discover-object-mapper: true
 
 # Eureka service discovery
 eureka:
@@ -55,9 +64,12 @@ app:
   kafka:
     bootstrap-servers: ${KAFKA_BROKERS:localhost:9092}
     topics:
-      pdf-storage-requested: pdf-storage-requested
       document-stored: document.stored
       dlq: document-storage.dlq
+      # Saga topics
+      saga-command-document-storage: saga.command.document-storage
+      saga-compensation-document-storage: saga.compensation.document-storage
+      saga-reply-document-storage: saga.reply.document-storage
 
   # Storage configuration
   storage:
@@ -95,7 +107,6 @@ logging:
     org.apache.camel: INFO
     org.apache.camel.component.kafka: DEBUG
     org.springframework.data.mongodb: INFO
-    org.springframework.kafka: INFO
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
     file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
