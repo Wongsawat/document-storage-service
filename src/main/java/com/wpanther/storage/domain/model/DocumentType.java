@@ -15,6 +15,11 @@ public enum DocumentType {
     INVOICE_XML,
 
     /**
+     * Signed XML document from xml-signing-service
+     */
+    SIGNED_XML,
+
+    /**
      * Generic attachment
      */
     ATTACHMENT,
