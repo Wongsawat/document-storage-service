@@ -66,10 +66,14 @@ app:
     topics:
       document-stored: document.stored
       dlq: document-storage.dlq
-      # Saga topics
+      # Saga topics for PDF document storage
       saga-command-document-storage: saga.command.document-storage
       saga-compensation-document-storage: saga.compensation.document-storage
       saga-reply-document-storage: saga.reply.document-storage
+      # Saga topics for signed XML storage
+      saga-command-signedxml-storage: saga.command.signedxml-storage
+      saga-compensation-signedxml-storage: saga.compensation.signedxml-storage
+      saga-reply-signedxml-storage: saga.reply.signedxml-storage
 
   # Storage configuration
   storage:
