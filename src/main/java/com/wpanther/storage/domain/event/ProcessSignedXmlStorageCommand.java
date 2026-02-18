@@ -35,8 +35,8 @@ public class ProcessSignedXmlStorageCommand extends IntegrationEvent {
     @JsonProperty("documentType")
     private final String documentType;
 
-    @JsonProperty("signedXmlContent")
-    private final String signedXmlContent;
+    @JsonProperty("signedXmlUrl")
+    private final String signedXmlUrl;
 
     @JsonProperty("signatureLevel")
     private final String signatureLevel;
@@ -53,7 +53,7 @@ public class ProcessSignedXmlStorageCommand extends IntegrationEvent {
             @JsonProperty("documentId") String documentId,
             @JsonProperty("invoiceNumber") String invoiceNumber,
             @JsonProperty("documentType") String documentType,
-            @JsonProperty("signedXmlContent") String signedXmlContent,
+            @JsonProperty("signedXmlUrl") String signedXmlUrl,
             @JsonProperty("signatureLevel") String signatureLevel) {
         super(eventId, occurredAt, eventType, version);
         this.sagaId = sagaId;
@@ -62,7 +62,7 @@ public class ProcessSignedXmlStorageCommand extends IntegrationEvent {
         this.documentId = documentId;
         this.invoiceNumber = invoiceNumber;
         this.documentType = documentType;
-        this.signedXmlContent = signedXmlContent;
+        this.signedXmlUrl = signedXmlUrl;
         this.signatureLevel = signatureLevel;
     }
 
@@ -71,7 +71,7 @@ public class ProcessSignedXmlStorageCommand extends IntegrationEvent {
      */
     public ProcessSignedXmlStorageCommand(String sagaId, String sagaStep, String correlationId,
                                           String documentId, String invoiceNumber, String documentType,
-                                          String signedXmlContent, String signatureLevel) {
+                                          String signedXmlUrl, String signatureLevel) {
         super();
         this.sagaId = sagaId;
         this.sagaStep = sagaStep;
@@ -79,7 +79,7 @@ public class ProcessSignedXmlStorageCommand extends IntegrationEvent {
         this.documentId = documentId;
         this.invoiceNumber = invoiceNumber;
         this.documentType = documentType;
-        this.signedXmlContent = signedXmlContent;
+        this.signedXmlUrl = signedXmlUrl;
         this.signatureLevel = signatureLevel;
     }
 }

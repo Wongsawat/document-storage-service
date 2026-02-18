@@ -11,7 +11,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.client.RestTemplate;
 
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 /**
@@ -31,6 +33,7 @@ public class SignedXmlStorageSagaCommandHandler {
     private final DocumentStorageService storageService;
     private final MongoDocumentRepository documentRepository;
     private final SignedXmlStorageSagaReplyPublisher sagaReplyPublisher;
+    private final RestTemplate restTemplate;
 
     @Transactional
     public void handleProcessCommand(ProcessSignedXmlStorageCommand command) {
@@ -50,12 +53,19 @@ public class SignedXmlStorageSagaCommandHandler {
                 return;
             }
 
+            // Download signed XML from MinIO
+            String signedXmlUrl = command.getSignedXmlUrl();
+            String signedXml = restTemplate.getForObject(signedXmlUrl, String.class);
+            if (signedXml == null || signedXml.isBlank()) {
+                throw new IllegalStateException("Failed to download signed XML from " + signedXmlUrl);
+            }
+
             // Generate filename from invoice number and document type
             String fileName = generateFileName(command.getInvoiceNumber(), command.getDocumentType());
 
             // Store signed XML document (saves file + MongoDB metadata)
             StoredDocument document = storageService.storeDocument(
-                    command.getSignedXmlContent().getBytes(),
+                    signedXml.getBytes(StandardCharsets.UTF_8),
                     fileName,
                     "application/xml",
                     DocumentType.SIGNED_XML,

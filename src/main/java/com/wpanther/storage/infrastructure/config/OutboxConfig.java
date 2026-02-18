@@ -6,6 +6,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.web.client.RestTemplate;
 
 /**
  * Configuration for outbox pattern support.
@@ -18,5 +19,10 @@ public class OutboxConfig {
     @ConditionalOnMissingBean(OutboxEventRepository.class)
     public OutboxEventRepository outboxEventRepository(MongoTemplate mongoTemplate) {
         return new MongoOutboxEventRepository(mongoTemplate);
+    }
+
+    @Bean
+    public RestTemplate restTemplate() {
+        return new RestTemplate();
     }
 }
