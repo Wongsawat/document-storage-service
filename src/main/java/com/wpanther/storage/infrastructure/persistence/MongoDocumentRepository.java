@@ -17,6 +17,8 @@ public interface MongoDocumentRepository extends MongoRepository<StoredDocumentE
 
     List<StoredDocumentEntity> findByInvoiceId(String invoiceId);
 
+    List<StoredDocumentEntity> findByInvoiceIdAndDocumentType(String invoiceId, DocumentType documentType);
+
     List<StoredDocumentEntity> findByInvoiceNumber(String invoiceNumber);
 
     List<StoredDocumentEntity> findByExpiresAtBefore(LocalDateTime dateTime);

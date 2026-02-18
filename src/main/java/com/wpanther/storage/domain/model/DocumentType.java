@@ -20,6 +20,12 @@ public enum DocumentType {
     SIGNED_XML,
 
     /**
+     * Unsigned PDF from taxinvoice-pdf-generation-service (PDF_STORAGE saga step).
+     * Distinct from INVOICE_PDF (signed) to prevent idempotency collision.
+     */
+    UNSIGNED_PDF,
+
+    /**
      * Generic attachment
      */
     ATTACHMENT,

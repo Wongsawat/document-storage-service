@@ -70,6 +70,10 @@ app:
       saga-command-document-storage: saga.command.document-storage
       saga-compensation-document-storage: saga.compensation.document-storage
       saga-reply-document-storage: saga.reply.document-storage
+      # Saga topics for unsigned PDF storage (PDF_STORAGE step)
+      saga-command-pdf-storage: saga.command.pdf-storage
+      saga-compensation-pdf-storage: saga.compensation.pdf-storage
+      saga-reply-pdf-storage: saga.reply.pdf-storage
       # Saga topics for signed XML storage
       saga-command-signedxml-storage: saga.command.signedxml-storage
       saga-compensation-signedxml-storage: saga.compensation.signedxml-storage

@@ -1,10 +1,13 @@
 package com.wpanther.storage.infrastructure.config;
 
+import com.wpanther.storage.application.service.PdfStorageSagaCommandHandler;
 import com.wpanther.storage.application.service.SagaCommandHandler;
 import com.wpanther.storage.application.service.SignedXmlStorageSagaCommandHandler;
 import com.wpanther.storage.domain.event.CompensateDocumentStorageCommand;
+import com.wpanther.storage.domain.event.CompensatePdfStorageCommand;
 import com.wpanther.storage.domain.event.CompensateSignedXmlStorageCommand;
 import com.wpanther.storage.domain.event.ProcessDocumentStorageCommand;
+import com.wpanther.storage.domain.event.ProcessPdfStorageCommand;
 import com.wpanther.storage.domain.event.ProcessSignedXmlStorageCommand;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.camel.builder.RouteBuilder;
@@ -22,6 +25,7 @@ public class SagaRouteConfig extends RouteBuilder {
 
     private final SagaCommandHandler sagaCommandHandler;
     private final SignedXmlStorageSagaCommandHandler signedXmlStorageSagaCommandHandler;
+    private final PdfStorageSagaCommandHandler pdfStorageSagaCommandHandler;
 
     @Value("${app.kafka.bootstrap-servers}")
     private String kafkaBrokers;
@@ -38,13 +42,21 @@ public class SagaRouteConfig extends RouteBuilder {
     @Value("${app.kafka.topics.saga-compensation-signedxml-storage}")
     private String sagaCompensationSignedXmlTopic;
 
+    @Value("${app.kafka.topics.saga-command-pdf-storage}")
+    private String sagaCommandPdfStorageTopic;
+
+    @Value("${app.kafka.topics.saga-compensation-pdf-storage}")
+    private String sagaCompensationPdfStorageTopic;
+
     @Value("${app.kafka.topics.dlq:document-storage.dlq}")
     private String dlqTopic;
 
     public SagaRouteConfig(SagaCommandHandler sagaCommandHandler,
-                           SignedXmlStorageSagaCommandHandler signedXmlStorageSagaCommandHandler) {
+                           SignedXmlStorageSagaCommandHandler signedXmlStorageSagaCommandHandler,
+                           PdfStorageSagaCommandHandler pdfStorageSagaCommandHandler) {
         this.sagaCommandHandler = sagaCommandHandler;
         this.signedXmlStorageSagaCommandHandler = signedXmlStorageSagaCommandHandler;
+        this.pdfStorageSagaCommandHandler = pdfStorageSagaCommandHandler;
     }
 
     @Override
@@ -138,5 +150,45 @@ public class SagaRouteConfig extends RouteBuilder {
                     signedXmlStorageSagaCommandHandler.handleCompensation(cmd);
                 })
                 .log("Successfully processed signed XML compensation command");
+
+        // Consume ProcessPdfStorageCommand from orchestrator (PDF_STORAGE step)
+        from("kafka:" + sagaCommandPdfStorageTopic
+                + "?brokers=" + kafkaBrokers
+                + "&groupId=document-storage-service"
+                + "&autoOffsetReset=earliest"
+                + "&autoCommitEnable=false"
+                + "&breakOnFirstError=true"
+                + "&maxPollRecords=100"
+                + "&consumersCount=3")
+                .routeId("saga-pdf-storage-command-consumer")
+                .log("Received PDF storage command: partition=${header[kafka.PARTITION]}, offset=${header[kafka.OFFSET]}")
+                .unmarshal().json(JsonLibrary.Jackson, ProcessPdfStorageCommand.class)
+                .process(exchange -> {
+                    ProcessPdfStorageCommand cmd = exchange.getIn().getBody(ProcessPdfStorageCommand.class);
+                    log.info("Processing PDF storage command for saga: {}, document: {}",
+                            cmd.getSagaId(), cmd.getDocumentId());
+                    pdfStorageSagaCommandHandler.handleProcessCommand(cmd);
+                })
+                .log("Successfully processed PDF storage command");
+
+        // Consume CompensatePdfStorageCommand from orchestrator (PDF_STORAGE compensation)
+        from("kafka:" + sagaCompensationPdfStorageTopic
+                + "?brokers=" + kafkaBrokers
+                + "&groupId=document-storage-service"
+                + "&autoOffsetReset=earliest"
+                + "&autoCommitEnable=false"
+                + "&breakOnFirstError=true"
+                + "&maxPollRecords=100"
+                + "&consumersCount=3")
+                .routeId("saga-pdf-storage-compensation-consumer")
+                .log("Received PDF storage compensation command: partition=${header[kafka.PARTITION]}, offset=${header[kafka.OFFSET]}")
+                .unmarshal().json(JsonLibrary.Jackson, CompensatePdfStorageCommand.class)
+                .process(exchange -> {
+                    CompensatePdfStorageCommand cmd = exchange.getIn().getBody(CompensatePdfStorageCommand.class);
+                    log.info("Processing PDF storage compensation for saga: {}, document: {}",
+                            cmd.getSagaId(), cmd.getDocumentId());
+                    pdfStorageSagaCommandHandler.handleCompensation(cmd);
+                })
+                .log("Successfully processed PDF storage compensation command");
     }
 }
