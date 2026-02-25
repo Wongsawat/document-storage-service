@@ -2,7 +2,7 @@ package com.wpanther.storage.domain.event;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.wpanther.saga.domain.model.IntegrationEvent;
+import com.wpanther.saga.domain.model.TraceEvent;
 import lombok.Getter;
 
 import java.time.Instant;
@@ -13,10 +13,12 @@ import java.util.UUID;
  * Consumed by notification-service and other downstream services.
  */
 @Getter
-public class DocumentStoredEvent extends IntegrationEvent {
+public class DocumentStoredEvent extends TraceEvent {
 
     private static final long serialVersionUID = 1L;
     private static final String EVENT_TYPE = "document.stored";
+    private static final String SOURCE = "document-storage-service";
+    private static final String TRACE_TYPE = "DOCUMENT_STORED";
 
     @JsonProperty("documentId")
     private final String documentId;
@@ -48,7 +50,7 @@ public class DocumentStoredEvent extends IntegrationEvent {
     public DocumentStoredEvent(String documentId, String invoiceId, String invoiceNumber,
                                 String fileName, String storageUrl, long fileSize,
                                 String checksum, String documentType, String correlationId) {
-        super();
+        super(invoiceId, SOURCE, TRACE_TYPE);
         this.documentId = documentId;
         this.invoiceId = invoiceId;
         this.invoiceNumber = invoiceNumber;
@@ -71,6 +73,10 @@ public class DocumentStoredEvent extends IntegrationEvent {
             @JsonProperty("occurredAt") Instant occurredAt,
             @JsonProperty("eventType") String eventType,
             @JsonProperty("version") int version,
+            @JsonProperty("sagaId") String sagaId,
+            @JsonProperty("source") String source,
+            @JsonProperty("traceType") String traceType,
+            @JsonProperty("context") String context,
             @JsonProperty("documentId") String documentId,
             @JsonProperty("invoiceId") String invoiceId,
             @JsonProperty("invoiceNumber") String invoiceNumber,
@@ -80,7 +86,7 @@ public class DocumentStoredEvent extends IntegrationEvent {
             @JsonProperty("checksum") String checksum,
             @JsonProperty("documentType") String documentType,
             @JsonProperty("correlationId") String correlationId) {
-        super(eventId, occurredAt, eventType, version);
+        super(eventId, occurredAt, eventType, version, sagaId, source, traceType, context);
         this.documentId = documentId;
         this.invoiceId = invoiceId;
         this.invoiceNumber = invoiceNumber;

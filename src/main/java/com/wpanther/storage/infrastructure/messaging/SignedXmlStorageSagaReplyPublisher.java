@@ -2,8 +2,9 @@ package com.wpanther.storage.infrastructure.messaging;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.wpanther.storage.domain.event.SignedXmlStorageReplyEvent;
+import com.wpanther.saga.domain.enums.SagaStep;
 import com.wpanther.saga.infrastructure.outbox.OutboxService;
+import com.wpanther.storage.domain.event.SignedXmlStorageReplyEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -28,7 +29,7 @@ public class SignedXmlStorageSagaReplyPublisher {
     private final ObjectMapper objectMapper;
 
     @Transactional(propagation = Propagation.MANDATORY)
-    public void publishSuccess(String sagaId, String sagaStep, String correlationId) {
+    public void publishSuccess(String sagaId, SagaStep sagaStep, String correlationId) {
         SignedXmlStorageReplyEvent reply = SignedXmlStorageReplyEvent.success(sagaId, sagaStep, correlationId);
 
         Map<String, String> headers = Map.of(
@@ -50,7 +51,7 @@ public class SignedXmlStorageSagaReplyPublisher {
     }
 
     @Transactional(propagation = Propagation.MANDATORY)
-    public void publishFailure(String sagaId, String sagaStep, String correlationId, String errorMessage) {
+    public void publishFailure(String sagaId, SagaStep sagaStep, String correlationId, String errorMessage) {
         SignedXmlStorageReplyEvent reply = SignedXmlStorageReplyEvent.failure(sagaId, sagaStep, correlationId, errorMessage);
 
         Map<String, String> headers = Map.of(
@@ -72,7 +73,7 @@ public class SignedXmlStorageSagaReplyPublisher {
     }
 
     @Transactional(propagation = Propagation.MANDATORY)
-    public void publishCompensated(String sagaId, String sagaStep, String correlationId) {
+    public void publishCompensated(String sagaId, SagaStep sagaStep, String correlationId) {
         SignedXmlStorageReplyEvent reply = SignedXmlStorageReplyEvent.compensated(sagaId, sagaStep, correlationId);
 
         Map<String, String> headers = Map.of(

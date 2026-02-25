@@ -1,6 +1,7 @@
 package com.wpanther.storage.domain.event;
 
 import com.wpanther.saga.domain.enums.ReplyStatus;
+import com.wpanther.saga.domain.enums.SagaStep;
 import com.wpanther.saga.domain.model.SagaReply;
 
 /**
@@ -17,7 +18,7 @@ public class PdfStorageReplyEvent extends SagaReply {
     private String storedDocumentId;
     private String storedDocumentUrl;
 
-    public static PdfStorageReplyEvent success(String sagaId, String sagaStep, String correlationId,
+    public static PdfStorageReplyEvent success(String sagaId, SagaStep sagaStep, String correlationId,
                                                String storedDocumentId, String storedDocumentUrl) {
         PdfStorageReplyEvent reply = new PdfStorageReplyEvent(sagaId, sagaStep, correlationId, ReplyStatus.SUCCESS);
         reply.storedDocumentId = storedDocumentId;
@@ -25,20 +26,20 @@ public class PdfStorageReplyEvent extends SagaReply {
         return reply;
     }
 
-    public static PdfStorageReplyEvent failure(String sagaId, String sagaStep, String correlationId,
+    public static PdfStorageReplyEvent failure(String sagaId, SagaStep sagaStep, String correlationId,
                                                String errorMessage) {
         return new PdfStorageReplyEvent(sagaId, sagaStep, correlationId, errorMessage);
     }
 
-    public static PdfStorageReplyEvent compensated(String sagaId, String sagaStep, String correlationId) {
+    public static PdfStorageReplyEvent compensated(String sagaId, SagaStep sagaStep, String correlationId) {
         return new PdfStorageReplyEvent(sagaId, sagaStep, correlationId, ReplyStatus.COMPENSATED);
     }
 
-    private PdfStorageReplyEvent(String sagaId, String sagaStep, String correlationId, ReplyStatus status) {
+    private PdfStorageReplyEvent(String sagaId, SagaStep sagaStep, String correlationId, ReplyStatus status) {
         super(sagaId, sagaStep, correlationId, status);
     }
 
-    private PdfStorageReplyEvent(String sagaId, String sagaStep, String correlationId, String errorMessage) {
+    private PdfStorageReplyEvent(String sagaId, SagaStep sagaStep, String correlationId, String errorMessage) {
         super(sagaId, sagaStep, correlationId, errorMessage);
     }
 

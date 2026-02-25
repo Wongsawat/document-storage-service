@@ -1,6 +1,7 @@
 package com.wpanther.storage.domain.event;
 
 import com.wpanther.saga.domain.enums.ReplyStatus;
+import com.wpanther.saga.domain.enums.SagaStep;
 import com.wpanther.saga.domain.model.SagaReply;
 
 /**
@@ -14,14 +15,14 @@ public class DocumentStorageReplyEvent extends SagaReply {
     /**
      * Create a SUCCESS reply.
      */
-    public static DocumentStorageReplyEvent success(String sagaId, String sagaStep, String correlationId) {
+    public static DocumentStorageReplyEvent success(String sagaId, SagaStep sagaStep, String correlationId) {
         return new DocumentStorageReplyEvent(sagaId, sagaStep, correlationId, ReplyStatus.SUCCESS);
     }
 
     /**
      * Create a FAILURE reply.
      */
-    public static DocumentStorageReplyEvent failure(String sagaId, String sagaStep,
+    public static DocumentStorageReplyEvent failure(String sagaId, SagaStep sagaStep,
                                                      String correlationId, String errorMessage) {
         return new DocumentStorageReplyEvent(sagaId, sagaStep, correlationId, errorMessage);
     }
@@ -29,15 +30,15 @@ public class DocumentStorageReplyEvent extends SagaReply {
     /**
      * Create a COMPENSATED reply.
      */
-    public static DocumentStorageReplyEvent compensated(String sagaId, String sagaStep, String correlationId) {
+    public static DocumentStorageReplyEvent compensated(String sagaId, SagaStep sagaStep, String correlationId) {
         return new DocumentStorageReplyEvent(sagaId, sagaStep, correlationId, ReplyStatus.COMPENSATED);
     }
 
-    private DocumentStorageReplyEvent(String sagaId, String sagaStep, String correlationId, ReplyStatus status) {
+    private DocumentStorageReplyEvent(String sagaId, SagaStep sagaStep, String correlationId, ReplyStatus status) {
         super(sagaId, sagaStep, correlationId, status);
     }
 
-    private DocumentStorageReplyEvent(String sagaId, String sagaStep, String correlationId, String errorMessage) {
+    private DocumentStorageReplyEvent(String sagaId, SagaStep sagaStep, String correlationId, String errorMessage) {
         super(sagaId, sagaStep, correlationId, errorMessage);
     }
 }

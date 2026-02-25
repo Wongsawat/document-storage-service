@@ -2,7 +2,8 @@ package com.wpanther.storage.domain.event;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.wpanther.saga.domain.model.IntegrationEvent;
+import com.wpanther.saga.domain.enums.SagaStep;
+import com.wpanther.saga.domain.model.SagaCommand;
 import lombok.Getter;
 
 import java.time.Instant;
@@ -13,21 +14,12 @@ import java.util.UUID;
  * Consumed from Kafka topic: saga.compensation.document-storage
  */
 @Getter
-public class CompensateDocumentStorageCommand extends IntegrationEvent {
+public class CompensateDocumentStorageCommand extends SagaCommand {
 
     private static final long serialVersionUID = 1L;
 
-    @JsonProperty("sagaId")
-    private final String sagaId;
-
-    @JsonProperty("sagaStep")
-    private final String sagaStep;
-
-    @JsonProperty("correlationId")
-    private final String correlationId;
-
     @JsonProperty("stepToCompensate")
-    private final String stepToCompensate;
+    private final SagaStep stepToCompensate;
 
     @JsonProperty("documentId")
     private final String documentId;
@@ -42,15 +34,12 @@ public class CompensateDocumentStorageCommand extends IntegrationEvent {
             @JsonProperty("eventType") String eventType,
             @JsonProperty("version") int version,
             @JsonProperty("sagaId") String sagaId,
-            @JsonProperty("sagaStep") String sagaStep,
+            @JsonProperty("sagaStep") SagaStep sagaStep,
             @JsonProperty("correlationId") String correlationId,
-            @JsonProperty("stepToCompensate") String stepToCompensate,
+            @JsonProperty("stepToCompensate") SagaStep stepToCompensate,
             @JsonProperty("documentId") String documentId,
             @JsonProperty("documentType") String documentType) {
-        super(eventId, occurredAt, eventType, version);
-        this.sagaId = sagaId;
-        this.sagaStep = sagaStep;
-        this.correlationId = correlationId;
+        super(eventId, occurredAt, eventType, version, sagaId, sagaStep, correlationId);
         this.stepToCompensate = stepToCompensate;
         this.documentId = documentId;
         this.documentType = documentType;
@@ -59,13 +48,10 @@ public class CompensateDocumentStorageCommand extends IntegrationEvent {
     /**
      * Convenience constructor for testing.
      */
-    public CompensateDocumentStorageCommand(String sagaId, String sagaStep, String correlationId,
-                                             String stepToCompensate, String documentId,
+    public CompensateDocumentStorageCommand(String sagaId, SagaStep sagaStep, String correlationId,
+                                             SagaStep stepToCompensate, String documentId,
                                              String documentType) {
-        super();
-        this.sagaId = sagaId;
-        this.sagaStep = sagaStep;
-        this.correlationId = correlationId;
+        super(sagaId, sagaStep, correlationId);
         this.stepToCompensate = stepToCompensate;
         this.documentId = documentId;
         this.documentType = documentType;

@@ -2,8 +2,9 @@ package com.wpanther.storage.infrastructure.messaging;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.wpanther.storage.domain.event.PdfStorageReplyEvent;
+import com.wpanther.saga.domain.enums.SagaStep;
 import com.wpanther.saga.infrastructure.outbox.OutboxService;
+import com.wpanther.storage.domain.event.PdfStorageReplyEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -28,7 +29,7 @@ public class PdfStorageSagaReplyPublisher {
     private final ObjectMapper objectMapper;
 
     @Transactional(propagation = Propagation.MANDATORY)
-    public void publishSuccess(String sagaId, String sagaStep, String correlationId,
+    public void publishSuccess(String sagaId, SagaStep sagaStep, String correlationId,
                                String storedDocumentId, String storedDocumentUrl) {
         PdfStorageReplyEvent reply = PdfStorageReplyEvent.success(
                 sagaId, sagaStep, correlationId, storedDocumentId, storedDocumentUrl);
@@ -53,7 +54,7 @@ public class PdfStorageSagaReplyPublisher {
     }
 
     @Transactional(propagation = Propagation.MANDATORY)
-    public void publishFailure(String sagaId, String sagaStep, String correlationId, String errorMessage) {
+    public void publishFailure(String sagaId, SagaStep sagaStep, String correlationId, String errorMessage) {
         PdfStorageReplyEvent reply = PdfStorageReplyEvent.failure(sagaId, sagaStep, correlationId, errorMessage);
 
         Map<String, String> headers = Map.of(
@@ -75,7 +76,7 @@ public class PdfStorageSagaReplyPublisher {
     }
 
     @Transactional(propagation = Propagation.MANDATORY)
-    public void publishCompensated(String sagaId, String sagaStep, String correlationId) {
+    public void publishCompensated(String sagaId, SagaStep sagaStep, String correlationId) {
         PdfStorageReplyEvent reply = PdfStorageReplyEvent.compensated(sagaId, sagaStep, correlationId);
 
         Map<String, String> headers = Map.of(
