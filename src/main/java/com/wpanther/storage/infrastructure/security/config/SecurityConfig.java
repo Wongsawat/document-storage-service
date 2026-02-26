@@ -66,6 +66,9 @@ public class SecurityConfig {
                         // Public API for health check
                         .requestMatchers("/api/v1/health").permitAll()
 
+                        // Public authentication endpoints (for JWT token exchange)
+                        .requestMatchers("/api/v1/auth/**").permitAll()
+
                         // Document upload requires DOCUMENT_WRITE permission
                         .requestMatchers(HttpMethod.POST, "/api/v1/documents").hasAuthority("DOCUMENT_WRITE")
 
@@ -152,5 +155,17 @@ public class SecurityConfig {
             AuthenticationConfiguration config
     ) throws Exception {
         return config.getAuthenticationManager();
+    }
+
+    /**
+     * JWT properties for configuration and validation
+     */
+    @Bean
+    public JwtConfigValidator.JwtProperties jwtProperties(
+            @Value("${app.security.jwt.secret}") String secret,
+            @Value("${app.security.jwt.expiration:86400000}") long jwtExpiration,
+            @Value("${app.security.jwt.refresh-expiration:604800000}") long jwtRefreshExpiration
+    ) {
+        return new JwtConfigValidator.JwtProperties(secret, jwtExpiration, jwtRefreshExpiration);
     }
 }

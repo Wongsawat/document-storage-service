@@ -98,9 +98,17 @@ app:
   # Security configuration
   security:
     jwt:
-      # Secret key for JWT signing (base64-encoded)
-      # IMPORTANT: Change this in production!
-      secret: ${JWT_SECRET:404E635266556A586E3272354E39423F4428472B4B6250645367566B59703373367639792F423F4528482B4D6251655468576D5A7134743777397A24432646294A404E635266556A586E3272357538782F413F4428472B4B6250645367566B59703373367639792F425A452D4A614E645267556B58703273357538782F413F4428472B4B6250645367533879}
+      # Secret key for JWT signing (base64-encoded, minimum 256 bits)
+      # REQUIRED: Must be set via environment variable in production
+      secret: ${JWT_SECRET}
+      # JWT token expiration in milliseconds (default: 24 hours)
+      expiration: ${JWT_EXPIRATION:86400000}
+      # JWT refresh token expiration in milliseconds (default: 7 days)
+      refresh-expiration: ${JWT_REFRESH_EXPIRATION:604800000}
+    # Service credentials for inter-service authentication
+    service:
+      username: ${SERVICE_USERNAME:service-document-storage}
+      password: ${SERVICE_PASSWORD:}  # REQUIRED in production
       # JWT token expiration in milliseconds (default: 24 hours)
       expiration: ${JWT_EXPIRATION:86400000}
       # JWT refresh token expiration in milliseconds (default: 7 days)

@@ -2,6 +2,7 @@ package com.wpanther.storage.infrastructure.security;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -22,6 +23,9 @@ public class DocumentStorageUserDetailsService implements UserDetailsService {
 
     private static final String SERVICE_USER_PREFIX = "service-";
 
+    @Value("${app.security.service.password:}")
+    private String servicePassword;
+
     /**
      * Load user by username (service name).
      * In production, this would load from a database or external identity provider.
@@ -35,13 +39,20 @@ public class DocumentStorageUserDetailsService implements UserDetailsService {
             throw new UsernameNotFoundException("User not found: " + username);
         }
 
+        // Validate service password is configured
+        if (servicePassword == null || servicePassword.isBlank()) {
+            throw new IllegalStateException(
+                "Service password is not configured. Please set SERVICE_PASSWORD environment variable."
+            );
+        }
+
         // Extract roles based on service type
         List<SimpleGrantedAuthority> authorities = determineAuthorities(username);
 
-        // Return Spring Security User object
+        // Return Spring Security User object with encoded password
         return User.builder()
                 .username(username)
-                .password("") // No password for JWT-based service authentication
+                .password(servicePassword)  // Password will be encoded by AuthenticationProvider
                 .authorities(authorities)
                 .accountExpired(false)
                 .accountLocked(false)
