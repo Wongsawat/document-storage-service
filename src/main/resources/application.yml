@@ -63,6 +63,12 @@ app:
   # Kafka configuration (used by Apache Camel routes)
   kafka:
     bootstrap-servers: ${KAFKA_BROKERS:localhost:9092}
+    # Consumer configuration
+    consumer:
+      auto-offset-reset: ${KAFKA_AUTO_OFFSET_RESET:latest}  # earliest for dev, latest for prod
+      max-poll-records: ${KAFKA_MAX_POLL_RECORDS:100}
+      consumers-count: ${KAFKA_CONSUMERS_COUNT:3}
+      max-redeliveries: ${KAFKA_MAX_REDELIVERIES:3}
     topics:
       document-stored: document.stored
       dlq: document-storage.dlq

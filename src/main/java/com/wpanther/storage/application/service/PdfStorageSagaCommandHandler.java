@@ -18,9 +18,30 @@ import java.util.List;
  * Handles saga commands from the orchestrator for the PDF_STORAGE step.
  * Downloads the unsigned tax invoice PDF from MinIO and stores it in document-storage-service.
  * Publishes replies via outbox pattern.
- *
+ * <p>
  * Uses UNSIGNED_PDF document type to prevent idempotency collision with the
  * STORE_DOCUMENT step (which stores the signed PDF as INVOICE_PDF for the same documentId).
+ * <p>
+ * <b>Transaction Boundary:</b>
+ * <pre>
+ * ┌─────────────────────────────────────────────────────────────────┐
+ * │ @Transactional (PostgreSQL transaction only)                    │
+ * │ ┌─────────────────────────────────────────────────────────────┐│
+ * │ │ 1. Idempotency check (MongoDB - NOT in PostgreSQL tx)     ││
+ * │ │ 2. Download unsigned PDF from MinIO (HTTP call)          ││
+ * │ │ 3. Store document as UNSIGNED_PDF (MongoDB + filesystem) ││
+ * │ │ 4. Publish saga reply (PostgreSQL outbox - IN tx)        ││
+ * │ └─────────────────────────────────────────────────────────────┘│
+ * │                    COMMIT (PostgreSQL only)                   │
+ * └─────────────────────────────────────────────────────────────────┘
+ * </pre>
+ * <p>
+ * <b>Important Notes:</b>
+ * <ul>
+ *   <li>MongoDB writes are NOT part of the PostgreSQL transaction</li>
+ *   <li>Idempotency check prevents duplicate processing on retry</li>
+ *   <li>Compensation handler cleans up orphaned MongoDB documents</li>
+ * </ul>
  */
 @Service
 @RequiredArgsConstructor

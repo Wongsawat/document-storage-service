@@ -20,10 +20,37 @@ import java.util.List;
  * Handles saga commands from the orchestrator.
  * Delegates business logic to DocumentStorageService and PdfDownloadService,
  * then publishes replies via outbox pattern.
- *
- * The @Transactional annotation governs the PostgreSQL transaction (outbox writes).
- * MongoDB writes happen inside the transaction body but are not part of the
- * PostgreSQL transaction. Idempotency check prevents duplicates on retry.
+ * <p>
+ * <b>Transaction Boundary:</b>
+ * <pre>
+ * ┌─────────────────────────────────────────────────────────────────┐
+ * │ @Transactional (PostgreSQL transaction only)                    │
+ * │ ┌─────────────────────────────────────────────────────────────┐│
+ * │ │ 1. Idempotency check (MongoDB - NOT in PostgreSQL tx)     ││
+ * │ │ 2. Download PDF from URL (HTTP call)                      ││
+ * │ │ 3. Store document (MongoDB + filesystem - NOT in tx)      ││
+ * │ │ 4. Publish DocumentStoredEvent (PostgreSQL outbox - IN tx) ││
+ * │ │ 5. Publish saga reply (PostgreSQL outbox - IN tx)        ││
+ * │ └─────────────────────────────────────────────────────────────┘│
+ * │                          │                                     │
+ * │                    COMMIT (PostgreSQL only)                   │
+ * │                          │                                     │
+ * │              ┌─────────────────────────────────┐              │
+ * │              │ Debezium CDC publishes events   │              │
+ * │              │ to Kafka from outbox table      │              │
+ * │              └─────────────────────────────────┘              │
+ * └─────────────────────────────────────────────────────────────────┘
+ * </pre>
+ * <p>
+ * <b>Important Notes:</b>
+ * <ul>
+ *   <li>MongoDB writes are NOT part of the PostgreSQL transaction</li>
+ *   <li>If PostgreSQL commit fails, MongoDB documents will persist (orphaned data)</li>
+ *   <li>If MongoDB write fails, PostgreSQL outbox events will rollback</li>
+ *   <li>Idempotency check prevents duplicate processing on retry</li>
+ *   <li>Compensation handler cleans up orphaned MongoDB documents</li>
+ *   <li>For stronger consistency, consider MongoDB multi-document transactions</li>
+ * </ul>
  */
 @Service
 @RequiredArgsConstructor

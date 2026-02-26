@@ -18,6 +18,12 @@ import org.springframework.stereotype.Component;
 /**
  * Apache Camel routes for saga command and compensation consumers.
  * Consumes commands from the Saga Orchestrator and delegates to the appropriate handler.
+ * <p>
+ * Configuration:
+ * - Separate consumer groups per saga step to prevent cross-contamination
+ * - Configurable autoOffsetReset (earliest for dev, latest for production)
+ * - Manual offset control for exactly-once semantics with outbox pattern
+ * - Dead Letter Channel with exponential backoff for error handling
  */
 @Component
 @Slf4j
@@ -51,6 +57,18 @@ public class SagaRouteConfig extends RouteBuilder {
     @Value("${app.kafka.topics.dlq:document-storage.dlq}")
     private String dlqTopic;
 
+    @Value("${app.kafka.consumer.auto-offset-reset:latest}")
+    private String autoOffsetReset;
+
+    @Value("${app.kafka.consumer.max-poll-records:100}")
+    private int maxPollRecords;
+
+    @Value("${app.kafka.consumer.consumers-count:3}")
+    private int consumersCount;
+
+    @Value("${app.kafka.consumer.max-redeliveries:3}")
+    private int maxRedeliveries;
+
     public SagaRouteConfig(SagaCommandHandler sagaCommandHandler,
                            SignedXmlStorageSagaCommandHandler signedXmlStorageSagaCommandHandler,
                            PdfStorageSagaCommandHandler pdfStorageSagaCommandHandler) {
@@ -62,24 +80,29 @@ public class SagaRouteConfig extends RouteBuilder {
     @Override
     public void configure() throws Exception {
 
+        // Global error handler with Dead Letter Channel
         errorHandler(deadLetterChannel("kafka:" + dlqTopic + "?brokers=" + kafkaBrokers)
-                .maximumRedeliveries(3)
+                .maximumRedeliveries(maxRedeliveries)
                 .redeliveryDelay(1000)
                 .useExponentialBackOff()
                 .backOffMultiplier(2)
                 .maximumRedeliveryDelay(10000)
                 .logExhausted(true)
-                .logStackTrace(true));
+                .logStackTrace(true)
+                .retryAttemptedLogLevel(org.apache.camel.LoggingLevel.WARN));
+
+        // ========================================
+        // STORE_DOCUMENT saga step routes
+        // ========================================
 
         // Consume ProcessDocumentStorageCommand from orchestrator
         from("kafka:" + sagaCommandTopic
                 + "?brokers=" + kafkaBrokers
-                + "&groupId=document-storage-service"
-                + "&autoOffsetReset=earliest"
-                + "&autoCommitEnable=false"
-                + "&breakOnFirstError=true"
-                + "&maxPollRecords=100"
-                + "&consumersCount=3")
+                + "&groupId=document-storage-store-document"  // Unique consumer group per step
+                + "&autoOffsetReset=" + autoOffsetReset
+                + "&autoCommitEnable=false"  // Manual commit for exactly-once
+                + "&maxPollRecords=" + maxPollRecords
+                + "&consumersCount=" + consumersCount)
                 .routeId("saga-command-consumer")
                 .log("Received saga command: partition=${header[kafka.PARTITION]}, offset=${header[kafka.OFFSET]}")
                 .unmarshal().json(JsonLibrary.Jackson, ProcessDocumentStorageCommand.class)
@@ -94,12 +117,11 @@ public class SagaRouteConfig extends RouteBuilder {
         // Consume CompensateDocumentStorageCommand from orchestrator
         from("kafka:" + sagaCompensationTopic
                 + "?brokers=" + kafkaBrokers
-                + "&groupId=document-storage-service"
-                + "&autoOffsetReset=earliest"
+                + "&groupId=document-storage-store-document-compensation"  // Unique consumer group
+                + "&autoOffsetReset=" + autoOffsetReset
                 + "&autoCommitEnable=false"
-                + "&breakOnFirstError=true"
-                + "&maxPollRecords=100"
-                + "&consumersCount=3")
+                + "&maxPollRecords=" + maxPollRecords
+                + "&consumersCount=" + consumersCount)
                 .routeId("saga-compensation-consumer")
                 .log("Received compensation command: partition=${header[kafka.PARTITION]}, offset=${header[kafka.OFFSET]}")
                 .unmarshal().json(JsonLibrary.Jackson, CompensateDocumentStorageCommand.class)
@@ -111,15 +133,18 @@ public class SagaRouteConfig extends RouteBuilder {
                 })
                 .log("Successfully processed compensation command");
 
+        // ========================================
+        // SIGNEDXML_STORAGE saga step routes
+        // ========================================
+
         // Consume ProcessSignedXmlStorageCommand from orchestrator
         from("kafka:" + sagaCommandSignedXmlTopic
                 + "?brokers=" + kafkaBrokers
-                + "&groupId=document-storage-service"
-                + "&autoOffsetReset=earliest"
+                + "&groupId=document-storage-signedxml"  // Unique consumer group per step
+                + "&autoOffsetReset=" + autoOffsetReset
                 + "&autoCommitEnable=false"
-                + "&breakOnFirstError=true"
-                + "&maxPollRecords=100"
-                + "&consumersCount=3")
+                + "&maxPollRecords=" + maxPollRecords
+                + "&consumersCount=" + consumersCount)
                 .routeId("saga-signedxml-command-consumer")
                 .log("Received signed XML storage command: partition=${header[kafka.PARTITION]}, offset=${header[kafka.OFFSET]}")
                 .unmarshal().json(JsonLibrary.Jackson, ProcessSignedXmlStorageCommand.class)
@@ -134,12 +159,11 @@ public class SagaRouteConfig extends RouteBuilder {
         // Consume CompensateSignedXmlStorageCommand from orchestrator
         from("kafka:" + sagaCompensationSignedXmlTopic
                 + "?brokers=" + kafkaBrokers
-                + "&groupId=document-storage-service"
-                + "&autoOffsetReset=earliest"
+                + "&groupId=document-storage-signedxml-compensation"  // Unique consumer group
+                + "&autoOffsetReset=" + autoOffsetReset
                 + "&autoCommitEnable=false"
-                + "&breakOnFirstError=true"
-                + "&maxPollRecords=100"
-                + "&consumersCount=3")
+                + "&maxPollRecords=" + maxPollRecords
+                + "&consumersCount=" + consumersCount)
                 .routeId("saga-signedxml-compensation-consumer")
                 .log("Received signed XML compensation command: partition=${header[kafka.PARTITION]}, offset=${header[kafka.OFFSET]}")
                 .unmarshal().json(JsonLibrary.Jackson, CompensateSignedXmlStorageCommand.class)
@@ -151,15 +175,18 @@ public class SagaRouteConfig extends RouteBuilder {
                 })
                 .log("Successfully processed signed XML compensation command");
 
+        // ========================================
+        // PDF_STORAGE saga step routes
+        // ========================================
+
         // Consume ProcessPdfStorageCommand from orchestrator (PDF_STORAGE step)
         from("kafka:" + sagaCommandPdfStorageTopic
                 + "?brokers=" + kafkaBrokers
-                + "&groupId=document-storage-service"
-                + "&autoOffsetReset=earliest"
+                + "&groupId=document-storage-pdf"  // Unique consumer group per step
+                + "&autoOffsetReset=" + autoOffsetReset
                 + "&autoCommitEnable=false"
-                + "&breakOnFirstError=true"
-                + "&maxPollRecords=100"
-                + "&consumersCount=3")
+                + "&maxPollRecords=" + maxPollRecords
+                + "&consumersCount=" + consumersCount)
                 .routeId("saga-pdf-storage-command-consumer")
                 .log("Received PDF storage command: partition=${header[kafka.PARTITION]}, offset=${header[kafka.OFFSET]}")
                 .unmarshal().json(JsonLibrary.Jackson, ProcessPdfStorageCommand.class)
@@ -174,12 +201,11 @@ public class SagaRouteConfig extends RouteBuilder {
         // Consume CompensatePdfStorageCommand from orchestrator (PDF_STORAGE compensation)
         from("kafka:" + sagaCompensationPdfStorageTopic
                 + "?brokers=" + kafkaBrokers
-                + "&groupId=document-storage-service"
-                + "&autoOffsetReset=earliest"
+                + "&groupId=document-storage-pdf-compensation"  // Unique consumer group
+                + "&autoOffsetReset=" + autoOffsetReset
                 + "&autoCommitEnable=false"
-                + "&breakOnFirstError=true"
-                + "&maxPollRecords=100"
-                + "&consumersCount=3")
+                + "&maxPollRecords=" + maxPollRecords
+                + "&consumersCount=" + consumersCount)
                 .routeId("saga-pdf-storage-compensation-consumer")
                 .log("Received PDF storage compensation command: partition=${header[kafka.PARTITION]}, offset=${header[kafka.OFFSET]}")
                 .unmarshal().json(JsonLibrary.Jackson, CompensatePdfStorageCommand.class)
