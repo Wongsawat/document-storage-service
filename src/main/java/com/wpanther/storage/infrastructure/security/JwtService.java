@@ -2,6 +2,7 @@ package com.wpanther.storage.infrastructure.security;
 
 import com.wpanther.storage.infrastructure.security.exception.SecurityException;
 import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
@@ -73,15 +74,27 @@ public class JwtService {
      * Validate token against username
      */
     public boolean isTokenValid(String token, String username) {
-        final String extractedUsername = extractUsername(token);
-        return (extractedUsername.equals(username)) && !isTokenExpired(token);
+        try {
+            final String extractedUsername = extractUsername(token);
+            return (extractedUsername.equals(username)) && !isTokenExpired(token);
+        } catch (SecurityException e) {
+            return false;
+        }
     }
 
     /**
      * Check if token is expired
      */
     public boolean isTokenExpired(String token) {
-        return extractExpiration(token).before(Date.from(Instant.now()));
+        try {
+            return extractExpiration(token).before(Date.from(Instant.now()));
+        } catch (SecurityException e) {
+            // If we can't parse the token (e.g., expired), check if it's an expired token exception
+            if (e.getCause() instanceof ExpiredJwtException) {
+                return true;
+            }
+            throw e;
+        }
     }
 
     /**
