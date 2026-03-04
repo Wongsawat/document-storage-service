@@ -66,4 +66,40 @@ public class PdfDownloadDomainService {
             throw new StorageFailedException("Failed to download PDF from " + pdfUrl, e);
         }
     }
+
+    /**
+     * Download content from the given URL as String (for XML, JSON, etc).
+     * @param url URL of the content to download
+     * @return Content as String
+     * @throws StorageFailedException if download fails
+     */
+    public String downloadContent(String url) {
+        log.info("Downloading content from: {}", url);
+
+        try {
+            HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(url))
+                .timeout(Duration.ofSeconds(REQUEST_TIMEOUT_SECONDS))
+                .GET()
+                .build();
+
+            HttpResponse<String> response = httpClient.send(
+                request,
+                HttpResponse.BodyHandlers.ofString()
+            );
+
+            if (response.statusCode() >= 200 && response.statusCode() < 300) {
+                log.info("Successfully downloaded content, size: {} bytes", response.body().length());
+                return response.body();
+            } else {
+                throw new StorageFailedException(
+                    "Failed to download content from " + url +
+                    ", HTTP status: " + response.statusCode()
+                );
+            }
+        } catch (IOException | InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new StorageFailedException("Failed to download content from " + url, e);
+        }
+    }
 }
