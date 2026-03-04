@@ -2,7 +2,7 @@ package com.wpanther.storage.infrastructure.adapter.inbound.security.config;
 
 import com.wpanther.storage.infrastructure.adapter.inbound.security.JwtAccessDeniedHandler;
 import com.wpanther.storage.infrastructure.adapter.inbound.security.JwtAuthenticationEntryPoint;
-import com.wpanther.storage.infrastructure.adapter.inbound.security.JwtAuthenticationFilter;
+import com.wpanther.storage.infrastructure.adapter.inbound.security.JwtAuthenticationAdapter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -38,7 +38,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @RequiredArgsConstructor
 public class SecurityConfig {
 
-    private final JwtAuthenticationFilter jwtAuthFilter;
+    private final JwtAuthenticationAdapter jwtAuthFilter;
     private final JwtAuthenticationEntryPoint authenticationEntryPoint;
     private final JwtAccessDeniedHandler accessDeniedHandler;
     private final UserDetailsService userDetailsService;

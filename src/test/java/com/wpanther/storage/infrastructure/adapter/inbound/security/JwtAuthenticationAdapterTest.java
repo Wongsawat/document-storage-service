@@ -37,10 +37,10 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-@DisplayName("JwtAuthenticationFilter Tests")
-class JwtAuthenticationFilterTest {
+@DisplayName("JwtAuthenticationAdapter Tests")
+class JwtAuthenticationAdapterTest {
 
-    private JwtAuthenticationFilter jwtAuthFilter;
+    private JwtAuthenticationAdapter jwtAuthFilter;
     private JwtService jwtService;
     private UserDetailsService userDetailsService;
     private FilterChain filterChain;
@@ -57,7 +57,7 @@ class JwtAuthenticationFilterTest {
         userDetailsService = mock(UserDetailsService.class);
         filterChain = mock(FilterChain.class);
 
-        jwtAuthFilter = new JwtAuthenticationFilter(jwtService, userDetailsService);
+        jwtAuthFilter = new JwtAuthenticationAdapter(jwtService, userDetailsService);
 
         // Set test configuration via reflection
         try {
