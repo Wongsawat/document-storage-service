@@ -1,6 +1,8 @@
 package com.wpanther.storage.infrastructure.adapter.outbound.storage;
 
-import com.wpanther.storage.domain.service.FileStorageProvider;
+import com.wpanther.storage.domain.model.StorageException;
+import com.wpanther.storage.domain.model.StorageResult;
+import com.wpanther.storage.domain.port.outbound.StorageProviderPort;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -12,17 +14,22 @@ import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.*;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.time.LocalDate;
 import java.util.UUID;
 
 /**
- * AWS S3 storage provider implementation
- * Stores documents in S3 with date-based key structure
+ * AWS S3 storage adapter
+ * Implements StorageProviderPort for S3-compatible storage
  */
 @Component
 @ConditionalOnProperty(name = "app.storage.provider", havingValue = "s3")
 @Slf4j
-public class S3FileStorageAdapter implements FileStorageProvider {
+public class S3FileStorageAdapter implements StorageProviderPort {
+
+    private static final String PROVIDER_NAME = "s3";
 
     private final S3Client s3Client;
     private final String bucketName;
@@ -65,78 +72,84 @@ public class S3FileStorageAdapter implements FileStorageProvider {
     }
 
     @Override
-    public StorageResult store(byte[] content, String fileName) throws StorageException {
+    public StorageResult store(String documentId, InputStream content,
+                                String originalFilename, long size) throws StorageException {
         try {
-            String key = generateS3Key(fileName);
+            String key = generateS3Key(originalFilename);
+
+            // Read InputStream to byte array for S3 upload
+            byte[] bytes = content.readAllBytes();
 
             PutObjectRequest putObjectRequest = PutObjectRequest.builder()
                 .bucket(bucketName)
                 .key(key)
-                .contentType(determineContentType(fileName))
-                .contentLength((long) content.length)
+                .contentType(determineContentType(originalFilename))
+                .contentLength((long) bytes.length)
                 .build();
 
-            s3Client.putObject(putObjectRequest, RequestBody.fromBytes(content));
+            s3Client.putObject(putObjectRequest, RequestBody.fromBytes(bytes));
 
             String url = generateUrl(key);
-            log.info("Stored file in S3: bucket={}, key={}, size={} bytes", bucketName, key, content.length);
+            log.info("Stored file in S3: bucket={}, key={}, size={} bytes", bucketName, key, bytes.length);
 
-            return new StorageResult(key, url);
+            return StorageResult.success(key, PROVIDER_NAME);
 
         } catch (S3Exception e) {
-            log.error("Failed to store file in S3: {}", fileName, e);
-            throw new StorageException("Failed to store file in S3", e);
+            log.error("Failed to store file in S3: {}", originalFilename, e);
+            throw new StorageException("Failed to store file in S3: " + originalFilename, e);
+        } catch (IOException e) {
+            log.error("Failed to read file content for S3 upload: {}", originalFilename, e);
+            throw new StorageException("Failed to read file content: " + originalFilename, e);
         }
     }
 
     @Override
-    public byte[] retrieve(String path) throws StorageException {
+    public InputStream retrieve(String storageLocation) throws StorageException {
         try {
             GetObjectRequest getObjectRequest = GetObjectRequest.builder()
                 .bucket(bucketName)
-                .key(path)
+                .key(storageLocation)
                 .build();
 
-            byte[] content = s3Client.getObject(getObjectRequest).readAllBytes();
-            log.info("Retrieved file from S3: bucket={}, key={}, size={} bytes", bucketName, path, content.length);
+            InputStream content = s3Client.getObject(getObjectRequest);
+            log.info("Retrieved file from S3: bucket={}, key={}", bucketName, storageLocation);
 
             return content;
 
+        } catch (NoSuchKeyException e) {
+            throw new StorageException("File not found in S3: " + storageLocation, e);
         } catch (S3Exception e) {
-            if (e.statusCode() == 404) {
-                throw new StorageException("File not found in S3: " + path, e);
-            }
-            log.error("Failed to retrieve file from S3: {}", path, e);
-            throw new StorageException("Failed to retrieve file from S3", e);
+            log.error("Failed to retrieve file from S3: {}", storageLocation, e);
+            throw new StorageException("Failed to retrieve file from S3: " + storageLocation, e);
         } catch (Exception e) {
-            log.error("Error reading file content from S3: {}", path, e);
-            throw new StorageException("Failed to read file content", e);
+            log.error("Error reading file content from S3: {}", storageLocation, e);
+            throw new StorageException("Failed to read file content: " + storageLocation, e);
         }
     }
 
     @Override
-    public void delete(String path) throws StorageException {
+    public void delete(String storageLocation) throws StorageException {
         try {
             DeleteObjectRequest deleteObjectRequest = DeleteObjectRequest.builder()
                 .bucket(bucketName)
-                .key(path)
+                .key(storageLocation)
                 .build();
 
             s3Client.deleteObject(deleteObjectRequest);
-            log.info("Deleted file from S3: bucket={}, key={}", bucketName, path);
+            log.info("Deleted file from S3: bucket={}, key={}", bucketName, storageLocation);
 
         } catch (S3Exception e) {
-            log.error("Failed to delete file from S3: {}", path, e);
-            throw new StorageException("Failed to delete file from S3", e);
+            log.error("Failed to delete file from S3: {}", storageLocation, e);
+            throw new StorageException("Failed to delete file from S3: " + storageLocation, e);
         }
     }
 
     @Override
-    public boolean exists(String path) {
+    public boolean exists(String storageLocation) {
         try {
             HeadObjectRequest headObjectRequest = HeadObjectRequest.builder()
                 .bucket(bucketName)
-                .key(path)
+                .key(storageLocation)
                 .build();
 
             s3Client.headObject(headObjectRequest);
@@ -145,7 +158,7 @@ public class S3FileStorageAdapter implements FileStorageProvider {
         } catch (NoSuchKeyException e) {
             return false;
         } catch (S3Exception e) {
-            log.warn("Error checking file existence in S3: {}", path, e);
+            log.warn("Error checking file existence in S3: {}", storageLocation, e);
             return false;
         }
     }
