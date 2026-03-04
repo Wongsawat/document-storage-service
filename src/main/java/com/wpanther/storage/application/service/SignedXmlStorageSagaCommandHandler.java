@@ -2,9 +2,10 @@ package com.wpanther.storage.application.service;
 
 import com.wpanther.storage.domain.event.CompensateSignedXmlStorageCommand;
 import com.wpanther.storage.domain.event.ProcessSignedXmlStorageCommand;
+import com.wpanther.storage.domain.event.SignedXmlStorageReplyEvent;
 import com.wpanther.storage.domain.model.DocumentType;
 import com.wpanther.storage.domain.model.StoredDocument;
-import com.wpanther.storage.infrastructure.messaging.SignedXmlStorageSagaReplyPublisher;
+import com.wpanther.storage.domain.port.outbound.MessagePublisherPort;
 import com.wpanther.storage.infrastructure.adapter.outbound.persistence.StoredDocumentEntity;
 import com.wpanther.storage.infrastructure.adapter.outbound.persistence.MongoDocumentAdapter;
 import lombok.RequiredArgsConstructor;
@@ -32,7 +33,7 @@ public class SignedXmlStorageSagaCommandHandler {
 
     private final DocumentStorageService storageService;
     private final MongoDocumentAdapter documentRepository;
-    private final SignedXmlStorageSagaReplyPublisher sagaReplyPublisher;
+    private final MessagePublisherPort messagePublisher;
     private final RestTemplate restTemplate;
 
     @Transactional
@@ -48,8 +49,8 @@ public class SignedXmlStorageSagaCommandHandler {
 
             if (alreadyStored) {
                 log.warn("Signed XML for invoiceId {} already stored, sending SUCCESS reply", command.getDocumentId());
-                sagaReplyPublisher.publishSuccess(
-                        command.getSagaId(), command.getSagaStep(), command.getCorrelationId());
+                messagePublisher.publishReply(
+                        SignedXmlStorageReplyEvent.success(command.getSagaId(), command.getSagaStep(), command.getCorrelationId()));
                 return;
             }
 
@@ -76,8 +77,8 @@ public class SignedXmlStorageSagaCommandHandler {
             log.info("Stored signed XML document: documentId={}, invoiceId={}", document.getId(), command.getDocumentId());
 
             // Publish saga SUCCESS reply via outbox
-            sagaReplyPublisher.publishSuccess(
-                    command.getSagaId(), command.getSagaStep(), command.getCorrelationId());
+            messagePublisher.publishReply(
+                    SignedXmlStorageReplyEvent.success(command.getSagaId(), command.getSagaStep(), command.getCorrelationId()));
 
             log.info("Successfully processed signed XML storage for saga {} document {}",
                     command.getSagaId(), command.getDocumentId());
@@ -85,8 +86,8 @@ public class SignedXmlStorageSagaCommandHandler {
         } catch (Exception e) {
             log.error("Failed to process signed XML storage for saga {} document {}: {}",
                     command.getSagaId(), command.getDocumentId(), e.getMessage(), e);
-            sagaReplyPublisher.publishFailure(
-                    command.getSagaId(), command.getSagaStep(), command.getCorrelationId(), e.getMessage());
+            messagePublisher.publishReply(
+                    SignedXmlStorageReplyEvent.failure(command.getSagaId(), command.getSagaStep(), command.getCorrelationId(), e.getMessage()));
         }
     }
 
@@ -115,15 +116,15 @@ public class SignedXmlStorageSagaCommandHandler {
                         command.getDocumentId());
             }
 
-            sagaReplyPublisher.publishCompensated(
-                    command.getSagaId(), command.getSagaStep(), command.getCorrelationId());
+            messagePublisher.publishReply(
+                    SignedXmlStorageReplyEvent.compensated(command.getSagaId(), command.getSagaStep(), command.getCorrelationId()));
 
         } catch (Exception e) {
             log.error("Failed to compensate signed XML storage for saga {} document {}: {}",
                     command.getSagaId(), command.getDocumentId(), e.getMessage(), e);
-            sagaReplyPublisher.publishFailure(
-                    command.getSagaId(), command.getSagaStep(), command.getCorrelationId(),
-                    "Compensation failed: " + e.getMessage());
+            messagePublisher.publishReply(
+                    SignedXmlStorageReplyEvent.failure(command.getSagaId(), command.getSagaStep(), command.getCorrelationId(),
+                            "Compensation failed: " + e.getMessage()));
         }
     }
 

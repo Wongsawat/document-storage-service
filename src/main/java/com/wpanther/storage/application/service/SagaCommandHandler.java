@@ -2,11 +2,11 @@ package com.wpanther.storage.application.service;
 
 import com.wpanther.storage.domain.event.CompensateDocumentStorageCommand;
 import com.wpanther.storage.domain.event.DocumentStoredEvent;
+import com.wpanther.storage.domain.event.DocumentStorageReplyEvent;
 import com.wpanther.storage.domain.event.ProcessDocumentStorageCommand;
 import com.wpanther.storage.domain.model.DocumentType;
 import com.wpanther.storage.domain.model.StoredDocument;
-import com.wpanther.storage.infrastructure.messaging.EventPublisher;
-import com.wpanther.storage.infrastructure.messaging.SagaReplyPublisher;
+import com.wpanther.storage.domain.port.outbound.MessagePublisherPort;
 import com.wpanther.storage.infrastructure.adapter.outbound.persistence.StoredDocumentEntity;
 import com.wpanther.storage.infrastructure.adapter.outbound.persistence.MongoDocumentAdapter;
 import lombok.RequiredArgsConstructor;
@@ -60,8 +60,7 @@ public class SagaCommandHandler {
     private final DocumentStorageService storageService;
     private final PdfDownloadService downloadService;
     private final MongoDocumentAdapter documentRepository;
-    private final SagaReplyPublisher sagaReplyPublisher;
-    private final EventPublisher eventPublisher;
+    private final MessagePublisherPort messagePublisher;
 
     @Transactional
     public void handleProcessCommand(ProcessDocumentStorageCommand command) {
@@ -73,8 +72,8 @@ public class SagaCommandHandler {
             List<StoredDocumentEntity> existing = documentRepository.findByInvoiceId(command.getDocumentId());
             if (!existing.isEmpty()) {
                 log.warn("Document for invoiceId {} already stored, sending SUCCESS reply", command.getDocumentId());
-                sagaReplyPublisher.publishSuccess(
-                        command.getSagaId(), command.getSagaStep(), command.getCorrelationId());
+                messagePublisher.publishReply(
+                        DocumentStorageReplyEvent.success(command.getSagaId(), command.getSagaStep(), command.getCorrelationId()));
                 return;
             }
 
@@ -108,11 +107,11 @@ public class SagaCommandHandler {
                     document.getDocumentType().name(),
                     command.getCorrelationId()
             );
-            eventPublisher.publishDocumentStored(storedEvent);
+            messagePublisher.publishEvent(storedEvent);
 
             // Publish saga SUCCESS reply via outbox
-            sagaReplyPublisher.publishSuccess(
-                    command.getSagaId(), command.getSagaStep(), command.getCorrelationId());
+            messagePublisher.publishReply(
+                    DocumentStorageReplyEvent.success(command.getSagaId(), command.getSagaStep(), command.getCorrelationId()));
 
             log.info("Successfully processed document storage for saga {} document {}",
                     command.getSagaId(), command.getDocumentId());
@@ -120,8 +119,8 @@ public class SagaCommandHandler {
         } catch (Exception e) {
             log.error("Failed to process document storage for saga {} document {}: {}",
                     command.getSagaId(), command.getDocumentId(), e.getMessage(), e);
-            sagaReplyPublisher.publishFailure(
-                    command.getSagaId(), command.getSagaStep(), command.getCorrelationId(), e.getMessage());
+            messagePublisher.publishReply(
+                    DocumentStorageReplyEvent.failure(command.getSagaId(), command.getSagaStep(), command.getCorrelationId(), e.getMessage()));
         }
     }
 
@@ -144,15 +143,15 @@ public class SagaCommandHandler {
                         command.getDocumentId());
             }
 
-            sagaReplyPublisher.publishCompensated(
-                    command.getSagaId(), command.getSagaStep(), command.getCorrelationId());
+            messagePublisher.publishReply(
+                    DocumentStorageReplyEvent.compensated(command.getSagaId(), command.getSagaStep(), command.getCorrelationId()));
 
         } catch (Exception e) {
             log.error("Failed to compensate document storage for saga {} document {}: {}",
                     command.getSagaId(), command.getDocumentId(), e.getMessage(), e);
-            sagaReplyPublisher.publishFailure(
-                    command.getSagaId(), command.getSagaStep(), command.getCorrelationId(),
-                    "Compensation failed: " + e.getMessage());
+            messagePublisher.publishReply(
+                    DocumentStorageReplyEvent.failure(command.getSagaId(), command.getSagaStep(), command.getCorrelationId(),
+                            "Compensation failed: " + e.getMessage()));
         }
     }
 }

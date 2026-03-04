@@ -1,10 +1,11 @@
 package com.wpanther.storage.application.service;
 
 import com.wpanther.storage.domain.event.CompensatePdfStorageCommand;
+import com.wpanther.storage.domain.event.PdfStorageReplyEvent;
 import com.wpanther.storage.domain.event.ProcessPdfStorageCommand;
 import com.wpanther.storage.domain.model.DocumentType;
 import com.wpanther.storage.domain.model.StoredDocument;
-import com.wpanther.storage.infrastructure.messaging.PdfStorageSagaReplyPublisher;
+import com.wpanther.storage.domain.port.outbound.MessagePublisherPort;
 import com.wpanther.storage.infrastructure.adapter.outbound.persistence.StoredDocumentEntity;
 import com.wpanther.storage.infrastructure.adapter.outbound.persistence.MongoDocumentAdapter;
 import lombok.RequiredArgsConstructor;
@@ -51,7 +52,7 @@ public class PdfStorageSagaCommandHandler {
     private final DocumentStorageService storageService;
     private final PdfDownloadService downloadService;
     private final MongoDocumentAdapter documentRepository;
-    private final PdfStorageSagaReplyPublisher sagaReplyPublisher;
+    private final MessagePublisherPort messagePublisher;
 
     @Transactional
     public void handleProcessCommand(ProcessPdfStorageCommand command) {
@@ -67,9 +68,9 @@ public class PdfStorageSagaCommandHandler {
                 StoredDocumentEntity existingDoc = existing.get(0);
                 log.warn("Unsigned PDF for documentId {} already stored as {}, sending SUCCESS reply",
                         command.getDocumentId(), existingDoc.getId());
-                sagaReplyPublisher.publishSuccess(
-                        command.getSagaId(), command.getSagaStep(), command.getCorrelationId(),
-                        existingDoc.getId(), existingDoc.getStorageUrl());
+                messagePublisher.publishReply(
+                        PdfStorageReplyEvent.success(command.getSagaId(), command.getSagaStep(), command.getCorrelationId(),
+                                existingDoc.getId(), existingDoc.getStorageUrl()));
                 return;
             }
 
@@ -92,9 +93,9 @@ public class PdfStorageSagaCommandHandler {
 
             // Publish SUCCESS reply with storedDocumentId and storedDocumentUrl
             // The orchestrator stores these in metadata so SIGN_PDF can download the PDF
-            sagaReplyPublisher.publishSuccess(
-                    command.getSagaId(), command.getSagaStep(), command.getCorrelationId(),
-                    document.getId(), document.getStorageUrl());
+            messagePublisher.publishReply(
+                    PdfStorageReplyEvent.success(command.getSagaId(), command.getSagaStep(), command.getCorrelationId(),
+                            document.getId(), document.getStorageUrl()));
 
             log.info("Successfully processed PDF storage for saga {} document {}",
                     command.getSagaId(), command.getDocumentId());
@@ -102,8 +103,8 @@ public class PdfStorageSagaCommandHandler {
         } catch (Exception e) {
             log.error("Failed to process PDF storage for saga {} document {}: {}",
                     command.getSagaId(), command.getDocumentId(), e.getMessage(), e);
-            sagaReplyPublisher.publishFailure(
-                    command.getSagaId(), command.getSagaStep(), command.getCorrelationId(), e.getMessage());
+            messagePublisher.publishReply(
+                    PdfStorageReplyEvent.failure(command.getSagaId(), command.getSagaStep(), command.getCorrelationId(), e.getMessage()));
         }
     }
 
@@ -127,15 +128,15 @@ public class PdfStorageSagaCommandHandler {
                         command.getDocumentId());
             }
 
-            sagaReplyPublisher.publishCompensated(
-                    command.getSagaId(), command.getSagaStep(), command.getCorrelationId());
+            messagePublisher.publishReply(
+                    PdfStorageReplyEvent.compensated(command.getSagaId(), command.getSagaStep(), command.getCorrelationId()));
 
         } catch (Exception e) {
             log.error("Failed to compensate PDF storage for saga {} document {}: {}",
                     command.getSagaId(), command.getDocumentId(), e.getMessage(), e);
-            sagaReplyPublisher.publishFailure(
-                    command.getSagaId(), command.getSagaStep(), command.getCorrelationId(),
-                    "Compensation failed: " + e.getMessage());
+            messagePublisher.publishReply(
+                    PdfStorageReplyEvent.failure(command.getSagaId(), command.getSagaStep(), command.getCorrelationId(),
+                            "Compensation failed: " + e.getMessage()));
         }
     }
 }
