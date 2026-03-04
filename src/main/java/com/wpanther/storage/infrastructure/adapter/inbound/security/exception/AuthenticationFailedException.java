@@ -1,4 +1,4 @@
-package com.wpanther.storage.infrastructure.security.exception;
+package com.wpanther.storage.infrastructure.adapter.inbound.security.exception;
 
 /**
  * Thrown when authentication fails (missing credentials, invalid username/password).

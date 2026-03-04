@@ -1,4 +1,4 @@
-package com.wpanther.storage.infrastructure.security;
+package com.wpanther.storage.infrastructure.adapter.inbound.security;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

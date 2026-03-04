@@ -1,4 +1,4 @@
-package com.wpanther.storage.infrastructure.security.config;
+package com.wpanther.storage.infrastructure.adapter.inbound.security.config;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.context.event.ApplicationReadyEvent;

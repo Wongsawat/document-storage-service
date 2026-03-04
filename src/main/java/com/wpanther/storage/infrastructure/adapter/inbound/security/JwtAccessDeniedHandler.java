@@ -1,4 +1,4 @@
-package com.wpanther.storage.infrastructure.security;
+package com.wpanther.storage.infrastructure.adapter.inbound.security;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;

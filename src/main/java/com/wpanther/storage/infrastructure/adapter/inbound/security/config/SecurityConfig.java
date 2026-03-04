@@ -1,8 +1,8 @@
-package com.wpanther.storage.infrastructure.security.config;
+package com.wpanther.storage.infrastructure.adapter.inbound.security.config;
 
-import com.wpanther.storage.infrastructure.security.JwtAccessDeniedHandler;
-import com.wpanther.storage.infrastructure.security.JwtAuthenticationEntryPoint;
-import com.wpanther.storage.infrastructure.security.JwtAuthenticationFilter;
+import com.wpanther.storage.infrastructure.adapter.inbound.security.JwtAccessDeniedHandler;
+import com.wpanther.storage.infrastructure.adapter.inbound.security.JwtAuthenticationEntryPoint;
+import com.wpanther.storage.infrastructure.adapter.inbound.security.JwtAuthenticationFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;

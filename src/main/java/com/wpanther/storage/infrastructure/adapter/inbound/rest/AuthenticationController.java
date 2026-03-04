@@ -1,7 +1,7 @@
 package com.wpanther.storage.infrastructure.adapter.inbound.rest;
 
-import com.wpanther.storage.infrastructure.security.JwtService;
-import com.wpanther.storage.infrastructure.security.exception.AuthenticationFailedException;
+import com.wpanther.storage.infrastructure.adapter.inbound.security.JwtService;
+import com.wpanther.storage.infrastructure.adapter.inbound.security.exception.AuthenticationFailedException;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

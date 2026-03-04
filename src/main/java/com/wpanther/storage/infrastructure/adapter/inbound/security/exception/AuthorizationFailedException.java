@@ -1,4 +1,4 @@
-package com.wpanther.storage.infrastructure.security.exception;
+package com.wpanther.storage.infrastructure.adapter.inbound.security.exception;
 
 /**
  * Thrown when authorization fails (insufficient permissions, forbidden access).

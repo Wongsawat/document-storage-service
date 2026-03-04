@@ -1,6 +1,6 @@
-package com.wpanther.storage.infrastructure.security;
+package com.wpanther.storage.infrastructure.adapter.inbound.security;
 
-import com.wpanther.storage.infrastructure.security.exception.SecurityException;
+import com.wpanther.storage.infrastructure.adapter.inbound.security.exception.SecurityException;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jwts;

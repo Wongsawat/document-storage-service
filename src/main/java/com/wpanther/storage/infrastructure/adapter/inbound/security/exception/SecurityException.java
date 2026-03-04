@@ -1,4 +1,4 @@
-package com.wpanther.storage.infrastructure.security.exception;
+package com.wpanther.storage.infrastructure.adapter.inbound.security.exception;
 
 /**
  * Sealed base class for all security-related exceptions.

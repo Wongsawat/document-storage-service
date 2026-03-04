@@ -1,4 +1,4 @@
-package com.wpanther.storage.infrastructure.security;
+package com.wpanther.storage.infrastructure.adapter.inbound.security;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;

@@ -1,7 +1,7 @@
-package com.wpanther.storage.infrastructure.security;
+package com.wpanther.storage.infrastructure.adapter.inbound.security;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.wpanther.storage.infrastructure.security.exception.SecurityException;
+import com.wpanther.storage.infrastructure.adapter.inbound.security.exception.SecurityException;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;

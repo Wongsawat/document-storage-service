@@ -1,6 +1,6 @@
-package com.wpanther.storage.infrastructure.security;
+package com.wpanther.storage.infrastructure.adapter.inbound.security;
 
-import com.wpanther.storage.infrastructure.security.exception.InvalidTokenException;
+import com.wpanther.storage.infrastructure.adapter.inbound.security.exception.InvalidTokenException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;

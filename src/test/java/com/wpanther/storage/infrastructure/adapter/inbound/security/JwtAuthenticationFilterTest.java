@@ -1,6 +1,6 @@
-package com.wpanther.storage.infrastructure.security;
+package com.wpanther.storage.infrastructure.adapter.inbound.security;
 
-import com.wpanther.storage.infrastructure.security.exception.SecurityException;
+import com.wpanther.storage.infrastructure.adapter.inbound.security.exception.SecurityException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import jakarta.servlet.FilterChain;

@@ -1,4 +1,4 @@
-package com.wpanther.storage.infrastructure.security.exception;
+package com.wpanther.storage.infrastructure.adapter.inbound.security.exception;
 
 /**
  * Thrown when a JWT token is invalid or malformed.
