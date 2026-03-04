@@ -1,6 +1,10 @@
 package com.wpanther.storage.domain.service;
 
 import com.wpanther.storage.domain.event.*;
+import com.wpanther.storage.domain.exception.StorageFailedException;
+import com.wpanther.storage.domain.exception.InvalidDocumentException;
+import com.wpanther.storage.domain.model.DocumentType;
+import com.wpanther.storage.domain.model.StoredDocument;
 import com.wpanther.storage.domain.port.outbound.MessagePublisherPort;
 import com.wpanther.storage.domain.port.inbound.SagaCommandUseCase;
 import org.slf4j.Logger;
@@ -33,8 +37,82 @@ public class SagaOrchestrationService implements SagaCommandUseCase {
     @Override
     @Transactional
     public void handleProcessCommand(ProcessDocumentStorageCommand command) {
-        // TODO: Implement in Task 18
-        throw new UnsupportedOperationException("Not yet implemented");
+        log.info("Handling ProcessDocumentStorageCommand for saga: {}, document: {}",
+                 command.getSagaId(), command.getDocumentId());
+
+        try {
+            // 1. Idempotency check
+            if (storageService.existsByInvoiceAndType(command.getDocumentId(), DocumentType.INVOICE_PDF)) {
+                log.info("Document already exists for invoice: {}, type: INVOICE_PDF",
+                         command.getDocumentId());
+                publishAlreadyExistsReply(command);
+                return;
+            }
+
+            // 2. Download PDF from orchestrator-provided URL
+            byte[] content = pdfDownloadService.downloadPdf(command.getSignedPdfUrl());
+
+            // 3. Store document
+            String filename = command.getDocumentId() + ".pdf";
+            StoredDocument stored = storageService.storeDocument(
+                content,
+                filename,
+                DocumentType.INVOICE_PDF,
+                command.getDocumentId()
+            );
+
+            // 4. Publish event and reply via outbox
+            DocumentStoredEvent event = new DocumentStoredEvent(
+                stored.getId(),
+                stored.getInvoiceId(),
+                command.getInvoiceNumber(),
+                stored.getFileName(),
+                stored.getStorageUrl(),
+                stored.getFileSize(),
+                stored.getChecksum(),
+                stored.getDocumentType().name(),
+                command.getCorrelationId()
+            );
+            messagePublisher.publishEvent(event);
+
+            DocumentStorageReplyEvent reply = DocumentStorageReplyEvent.success(
+                command.getSagaId(),
+                command.getSagaStep(),
+                command.getCorrelationId()
+            );
+            messagePublisher.publishReply(reply);
+
+            log.info("Successfully processed ProcessDocumentStorageCommand for saga: {}",
+                     command.getSagaId());
+
+        } catch (StorageFailedException | InvalidDocumentException e) {
+            log.error("Failed to process document storage command for saga: {}",
+                      command.getSagaId(), e);
+            publishFailureReply(command, e.getMessage());
+        } catch (Exception e) {
+            log.error("Unexpected error processing document storage command for saga: {}",
+                      command.getSagaId(), e);
+            publishFailureReply(command, "Unexpected error: " + e.getMessage());
+        }
+    }
+
+    private void publishAlreadyExistsReply(ProcessDocumentStorageCommand command) {
+        DocumentStorageReplyEvent reply = DocumentStorageReplyEvent.success(
+            command.getSagaId(),
+            command.getSagaStep(),
+            command.getCorrelationId()
+        );
+        messagePublisher.publishReply(reply);
+    }
+
+    private void publishFailureReply(ProcessDocumentStorageCommand command, String error) {
+        DocumentStorageReplyEvent reply = DocumentStorageReplyEvent.failure(
+            command.getSagaId(),
+            command.getSagaStep(),
+            command.getCorrelationId(),
+            error
+        );
+        messagePublisher.publishReply(reply);
     }
 
     @Override
