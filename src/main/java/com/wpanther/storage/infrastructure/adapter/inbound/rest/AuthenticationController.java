@@ -1,4 +1,4 @@
-package com.wpanther.storage.application.controller;
+package com.wpanther.storage.infrastructure.adapter.inbound.rest;
 
 import com.wpanther.storage.infrastructure.security.JwtService;
 import com.wpanther.storage.infrastructure.security.exception.AuthenticationFailedException;
