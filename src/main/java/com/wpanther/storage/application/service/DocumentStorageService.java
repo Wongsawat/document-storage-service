@@ -3,8 +3,8 @@ package com.wpanther.storage.application.service;
 import com.wpanther.storage.domain.model.DocumentType;
 import com.wpanther.storage.domain.model.StoredDocument;
 import com.wpanther.storage.domain.service.FileStorageProvider;
-import com.wpanther.storage.infrastructure.persistence.MongoDocumentRepository;
-import com.wpanther.storage.infrastructure.persistence.StoredDocumentEntity;
+import com.wpanther.storage.infrastructure.adapter.outbound.persistence.MongoDocumentAdapter;
+import com.wpanther.storage.infrastructure.adapter.outbound.persistence.StoredDocumentEntity;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.digest.DigestUtils;
@@ -21,7 +21,7 @@ import java.util.stream.Collectors;
 @Slf4j
 public class DocumentStorageService {
 
-    private final MongoDocumentRepository repository;
+    private final MongoDocumentAdapter repository;
     private final FileStorageProvider storageProvider;
 
     /**

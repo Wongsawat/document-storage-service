@@ -9,6 +9,14 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+
+import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -31,6 +39,13 @@ public class FileStorageDomainService implements DocumentStorageUseCase {
     @Transactional
     public StoredDocument storeDocument(byte[] content, String filename,
                                         DocumentType type, String invoiceId) {
+        return storeDocument(content, filename, determineContentType(filename), type, invoiceId, null);
+    }
+
+    @Override
+    @Transactional
+    public StoredDocument storeDocument(byte[] content, String filename, String contentType,
+                                        DocumentType type, String invoiceId, String invoiceNumber) {
         if (content == null || content.length == 0) {
             throw new InvalidDocumentException("Document content cannot be empty");
         }
@@ -43,9 +58,10 @@ public class FileStorageDomainService implements DocumentStorageUseCase {
         StoredDocument document = StoredDocument.builder()
             .id(documentId)
             .invoiceId(invoiceId)
+            .invoiceNumber(invoiceNumber)
             .documentType(type)
             .fileName(filename)
-            .contentType(determineContentType(filename))
+            .contentType(contentType != null ? contentType : determineContentType(filename))
             .storagePath(result.location())
             .storageUrl(result.location())
             .fileSize(content.length)
@@ -88,6 +104,20 @@ public class FileStorageDomainService implements DocumentStorageUseCase {
      */
     public InputStream downloadContent(String storagePath) {
         return storageProvider.retrieve(storagePath);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public byte[] getDocumentContent(String documentId) {
+        StoredDocument doc = documentRepository.findById(documentId)
+            .orElseThrow(() -> new DocumentNotFoundException(documentId));
+
+        try {
+            InputStream inputStream = storageProvider.retrieve(doc.getStoragePath());
+            return inputStream.readAllBytes();
+        } catch (Exception e) {
+            throw new StorageFailedException("Failed to retrieve document content: " + documentId, e);
+        }
     }
 
     private String determineContentType(String filename) {

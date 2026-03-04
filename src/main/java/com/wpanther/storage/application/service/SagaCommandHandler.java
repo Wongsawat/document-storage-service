@@ -7,8 +7,8 @@ import com.wpanther.storage.domain.model.DocumentType;
 import com.wpanther.storage.domain.model.StoredDocument;
 import com.wpanther.storage.infrastructure.messaging.EventPublisher;
 import com.wpanther.storage.infrastructure.messaging.SagaReplyPublisher;
-import com.wpanther.storage.infrastructure.persistence.StoredDocumentEntity;
-import com.wpanther.storage.infrastructure.persistence.MongoDocumentRepository;
+import com.wpanther.storage.infrastructure.adapter.outbound.persistence.StoredDocumentEntity;
+import com.wpanther.storage.infrastructure.adapter.outbound.persistence.MongoDocumentAdapter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -59,7 +59,7 @@ public class SagaCommandHandler {
 
     private final DocumentStorageService storageService;
     private final PdfDownloadService downloadService;
-    private final MongoDocumentRepository documentRepository;
+    private final MongoDocumentAdapter documentRepository;
     private final SagaReplyPublisher sagaReplyPublisher;
     private final EventPublisher eventPublisher;
 

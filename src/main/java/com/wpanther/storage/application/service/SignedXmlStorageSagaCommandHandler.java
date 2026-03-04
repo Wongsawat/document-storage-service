@@ -5,8 +5,8 @@ import com.wpanther.storage.domain.event.ProcessSignedXmlStorageCommand;
 import com.wpanther.storage.domain.model.DocumentType;
 import com.wpanther.storage.domain.model.StoredDocument;
 import com.wpanther.storage.infrastructure.messaging.SignedXmlStorageSagaReplyPublisher;
-import com.wpanther.storage.infrastructure.persistence.StoredDocumentEntity;
-import com.wpanther.storage.infrastructure.persistence.MongoDocumentRepository;
+import com.wpanther.storage.infrastructure.adapter.outbound.persistence.StoredDocumentEntity;
+import com.wpanther.storage.infrastructure.adapter.outbound.persistence.MongoDocumentAdapter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -31,7 +31,7 @@ import java.util.List;
 public class SignedXmlStorageSagaCommandHandler {
 
     private final DocumentStorageService storageService;
-    private final MongoDocumentRepository documentRepository;
+    private final MongoDocumentAdapter documentRepository;
     private final SignedXmlStorageSagaReplyPublisher sagaReplyPublisher;
     private final RestTemplate restTemplate;
 

@@ -1,8 +1,8 @@
-package com.wpanther.storage.application.controller;
+package com.wpanther.storage.infrastructure.adapter.inbound.rest;
 
-import com.wpanther.storage.application.service.DocumentStorageService;
 import com.wpanther.storage.domain.model.DocumentType;
 import com.wpanther.storage.domain.model.StoredDocument;
+import com.wpanther.storage.domain.port.inbound.DocumentStorageUseCase;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.ByteArrayResource;
@@ -19,7 +19,8 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
- * REST controller for document storage operations
+ * REST adapter for document storage operations.
+ * Implements the inbound REST endpoint for DocumentStorageUseCase.
  */
 @RestController
 @RequestMapping("/api/v1/documents")
@@ -27,7 +28,7 @@ import java.util.stream.Collectors;
 @Slf4j
 public class DocumentStorageController {
 
-    private final DocumentStorageService storageService;
+    private final DocumentStorageUseCase documentStorageUseCase;
 
     /**
      * Upload document
@@ -42,7 +43,7 @@ public class DocumentStorageController {
         try {
             log.info("Received file upload: {} (size: {} bytes)", file.getOriginalFilename(), file.getSize());
 
-            StoredDocument document = storageService.storeDocument(
+            StoredDocument document = documentStorageUseCase.storeDocument(
                 file.getBytes(),
                 file.getOriginalFilename(),
                 file.getContentType(),
@@ -74,8 +75,9 @@ public class DocumentStorageController {
     @GetMapping("/{id}")
     public ResponseEntity<Resource> downloadDocument(@PathVariable String id) {
         try {
-            StoredDocument document = storageService.getDocument(id);
-            byte[] content = storageService.getDocumentContent(id);
+            StoredDocument document = documentStorageUseCase.getDocument(id)
+                .orElseThrow(() -> new IllegalArgumentException("Document not found: " + id));
+            byte[] content = documentStorageUseCase.getDocumentContent(id);
 
             ByteArrayResource resource = new ByteArrayResource(content);
 
@@ -99,7 +101,8 @@ public class DocumentStorageController {
     @GetMapping("/{id}/metadata")
     public ResponseEntity<Map<String, Object>> getDocumentMetadata(@PathVariable String id) {
         try {
-            StoredDocument document = storageService.getDocument(id);
+            StoredDocument document = documentStorageUseCase.getDocument(id)
+                .orElseThrow(() -> new IllegalArgumentException("Document not found: " + id));
 
             return ResponseEntity.ok(Map.of(
                 "id", document.getId(),
@@ -124,7 +127,7 @@ public class DocumentStorageController {
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteDocument(@PathVariable String id) {
         try {
-            storageService.deleteDocument(id);
+            documentStorageUseCase.deleteDocument(id);
             return ResponseEntity.noContent().build();
 
         } catch (IllegalArgumentException e) {
@@ -140,7 +143,7 @@ public class DocumentStorageController {
      */
     @GetMapping("/invoice/{invoiceId}")
     public ResponseEntity<List<Map<String, Object>>> getDocumentsByInvoiceId(@PathVariable String invoiceId) {
-        List<StoredDocument> documents = storageService.findByInvoiceId(invoiceId);
+        List<StoredDocument> documents = documentStorageUseCase.getDocumentsByInvoice(invoiceId);
 
         List<Map<String, Object>> response = documents.stream()
             .map(doc -> Map.<String, Object>of(
