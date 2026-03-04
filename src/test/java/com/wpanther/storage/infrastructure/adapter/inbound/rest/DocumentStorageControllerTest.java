@@ -1,6 +1,7 @@
 package com.wpanther.storage.infrastructure.adapter.inbound.rest;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.wpanther.storage.domain.exception.DocumentNotFoundException;
 import com.wpanther.storage.domain.port.inbound.DocumentStorageUseCase;
 import com.wpanther.storage.domain.model.DocumentType;
 import com.wpanther.storage.domain.model.StoredDocument;
@@ -165,7 +166,7 @@ class DocumentStorageControllerTest {
         @DisplayName("Should download document successfully")
         void shouldDownloadDocumentSuccessfully() throws Exception {
             // Given
-            String documentId = "doc-123";
+            String documentId = "550e8400-e29b-41d4-a716-446655440000";
             byte[] content = "PDF content here".getBytes();
 
             StoredDocument document = StoredDocument.builder()
@@ -193,9 +194,9 @@ class DocumentStorageControllerTest {
         @DisplayName("Should return 404 when document not found")
         void shouldReturn404WhenNotFound() throws Exception {
             // Given
-            String documentId = "non-existent";
+            String documentId = "550e8400-e29b-41d4-a716-446655440001";
             when(documentStorageUseCase.getDocument(documentId))
-                    .thenThrow(new IllegalArgumentException("Document not found"));
+                    .thenThrow(new DocumentNotFoundException("Document not found"));
 
             // When & Then
             mockMvc.perform(get("/api/v1/documents/{id}", documentId))
@@ -206,7 +207,7 @@ class DocumentStorageControllerTest {
         @DisplayName("Should return 500 on download error")
         void shouldReturn500OnError() throws Exception {
             // Given
-            String documentId = "doc-error";
+            String documentId = "550e8400-e29b-41d4-a716-446655440002";
             when(documentStorageUseCase.getDocument(documentId)).thenReturn(Optional.of(
                     StoredDocument.builder()
                             .id(documentId)
@@ -235,7 +236,7 @@ class DocumentStorageControllerTest {
         @DisplayName("Should return document metadata")
         void shouldReturnMetadata() throws Exception {
             // Given
-            String documentId = "doc-123";
+            String documentId = "550e8400-e29b-41d4-a716-446655440000";
             StoredDocument document = StoredDocument.builder()
                     .id(documentId)
                     .fileName("invoice.pdf")
@@ -269,11 +270,12 @@ class DocumentStorageControllerTest {
         @DisplayName("Should return 404 when metadata not found")
         void shouldReturn404WhenMetadataNotFound() throws Exception {
             // Given
-            when(documentStorageUseCase.getDocument("non-existent"))
-                    .thenThrow(new IllegalArgumentException("Document not found"));
+            String documentId = "550e8400-e29b-41d4-a716-446655440003";
+            when(documentStorageUseCase.getDocument(documentId))
+                    .thenThrow(new DocumentNotFoundException("Document not found"));
 
             // When & Then
-            mockMvc.perform(get("/api/v1/documents/{id}/metadata", "non-existent"))
+            mockMvc.perform(get("/api/v1/documents/{id}/metadata", documentId))
                     .andExpect(status().isNotFound());
         }
 
@@ -281,8 +283,9 @@ class DocumentStorageControllerTest {
         @DisplayName("Should handle null invoice fields")
         void shouldHandleNullInvoiceFields() throws Exception {
             // Given
+            String documentId = "550e8400-e29b-41d4-a716-446655440005";
             StoredDocument document = StoredDocument.builder()
-                    .id("doc-123")
+                    .id(documentId)
                     .fileName("other.pdf")
                     .contentType("application/pdf")
                     .storagePath("/path")
@@ -294,10 +297,10 @@ class DocumentStorageControllerTest {
                     .invoiceNumber(null)
                     .build();
 
-            when(documentStorageUseCase.getDocument("doc-123")).thenReturn(Optional.of(document));
+            when(documentStorageUseCase.getDocument(documentId)).thenReturn(Optional.of(document));
 
             // When & Then
-            mockMvc.perform(get("/api/v1/documents/{id}/metadata", "doc-123"))
+            mockMvc.perform(get("/api/v1/documents/{id}/metadata", documentId))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.invoiceId").value(""))
                     .andExpect(jsonPath("$.invoiceNumber").value(""));
@@ -312,7 +315,7 @@ class DocumentStorageControllerTest {
         @DisplayName("Should delete document successfully")
         void shouldDeleteSuccessfully() throws Exception {
             // Given
-            String documentId = "doc-123";
+            String documentId = "550e8400-e29b-41d4-a716-446655440000";
             when(documentStorageUseCase.getDocument(documentId)).thenReturn(Optional.of(
                     StoredDocument.builder()
                             .id(documentId)
@@ -335,11 +338,12 @@ class DocumentStorageControllerTest {
         @DisplayName("Should return 404 when deleting non-existent document")
         void shouldReturn404WhenDeletingNonExistent() throws Exception {
             // Given
-            doThrow(new IllegalArgumentException("Document not found"))
-                    .when(documentStorageUseCase).deleteDocument("non-existent");
+            String documentId = "550e8400-e29b-41d4-a716-446655440004";
+            doThrow(new DocumentNotFoundException("Document not found"))
+                    .when(documentStorageUseCase).deleteDocument(documentId);
 
             // When & Then
-            mockMvc.perform(delete("/api/v1/documents/{id}", "non-existent"))
+            mockMvc.perform(delete("/api/v1/documents/{id}", documentId))
                     .andExpect(status().isNotFound());
         }
 
@@ -347,7 +351,7 @@ class DocumentStorageControllerTest {
         @DisplayName("Should return 500 on delete error")
         void shouldReturn500OnDeleteError() throws Exception {
             // Given
-            String documentId = "doc-error";
+            String documentId = "550e8400-e29b-41d4-a716-446655440002";
             when(documentStorageUseCase.getDocument(documentId)).thenReturn(Optional.of(
                     StoredDocument.builder()
                             .id(documentId)

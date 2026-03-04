@@ -3,6 +3,7 @@ package com.wpanther.storage.infrastructure.adapter.outbound.storage;
 import com.wpanther.storage.domain.model.StorageException;
 import com.wpanther.storage.domain.model.StorageResult;
 import com.wpanther.storage.domain.port.outbound.StorageProviderPort;
+import com.wpanther.storage.domain.util.ContentTypeUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -83,7 +84,7 @@ public class S3FileStorageAdapter implements StorageProviderPort {
             PutObjectRequest putObjectRequest = PutObjectRequest.builder()
                 .bucket(bucketName)
                 .key(key)
-                .contentType(determineContentType(originalFilename))
+                .contentType(ContentTypeUtil.determineContentType(originalFilename))
                 .contentLength((long) bytes.length)
                 .build();
 
@@ -112,7 +113,7 @@ public class S3FileStorageAdapter implements StorageProviderPort {
                 .build();
 
             InputStream content = s3Client.getObject(getObjectRequest);
-            log.info("Retrieved file from S3: bucket={}, key={}", bucketName, storageLocation);
+            log.debug("Retrieved file from S3: bucket={}, key={}", bucketName, storageLocation);
 
             return content;
 
@@ -189,26 +190,5 @@ public class S3FileStorageAdapter implements StorageProviderPort {
 
         // Use S3 URL format
         return String.format("https://%s.s3.amazonaws.com/%s", bucketName, key);
-    }
-
-    /**
-     * Determine content type from filename
-     */
-    private String determineContentType(String fileName) {
-        String lowerFileName = fileName.toLowerCase();
-
-        if (lowerFileName.endsWith(".pdf")) {
-            return "application/pdf";
-        } else if (lowerFileName.endsWith(".xml")) {
-            return "application/xml";
-        } else if (lowerFileName.endsWith(".json")) {
-            return "application/json";
-        } else if (lowerFileName.endsWith(".png")) {
-            return "image/png";
-        } else if (lowerFileName.endsWith(".jpg") || lowerFileName.endsWith(".jpeg")) {
-            return "image/jpeg";
-        }
-
-        return "application/octet-stream";
     }
 }

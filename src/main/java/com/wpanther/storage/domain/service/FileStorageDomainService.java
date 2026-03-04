@@ -4,17 +4,10 @@ import com.wpanther.storage.domain.model.*;
 import com.wpanther.storage.domain.port.outbound.*;
 import com.wpanther.storage.domain.exception.*;
 import com.wpanther.storage.domain.port.inbound.DocumentStorageUseCase;
+import com.wpanther.storage.domain.util.ContentTypeUtil;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
@@ -39,7 +32,7 @@ public class FileStorageDomainService implements DocumentStorageUseCase {
     @Transactional
     public StoredDocument storeDocument(byte[] content, String filename,
                                         DocumentType type, String invoiceId) {
-        return storeDocument(content, filename, determineContentType(filename), type, invoiceId, null);
+        return storeDocument(content, filename, ContentTypeUtil.determineContentType(filename), type, invoiceId, null);
     }
 
     @Override
@@ -61,7 +54,7 @@ public class FileStorageDomainService implements DocumentStorageUseCase {
             .invoiceNumber(invoiceNumber)
             .documentType(type)
             .fileName(filename)
-            .contentType(contentType != null ? contentType : determineContentType(filename))
+            .contentType(contentType != null ? contentType : ContentTypeUtil.determineContentType(filename))
             .storagePath(result.location())
             .storageUrl(result.location())
             .fileSize(content.length)
@@ -88,7 +81,7 @@ public class FileStorageDomainService implements DocumentStorageUseCase {
     @Transactional
     public void deleteDocument(String documentId) {
         StoredDocument doc = documentRepository.findById(documentId)
-            .orElseThrow(() -> new DocumentNotFoundException(documentId));
+            .orElseThrow(() -> new DocumentNotFoundException("Document not found: " + documentId));
         storageProvider.delete(doc.getStoragePath());
         documentRepository.deleteById(documentId);
     }
@@ -110,7 +103,7 @@ public class FileStorageDomainService implements DocumentStorageUseCase {
     @Transactional(readOnly = true)
     public byte[] getDocumentContent(String documentId) {
         StoredDocument doc = documentRepository.findById(documentId)
-            .orElseThrow(() -> new DocumentNotFoundException(documentId));
+            .orElseThrow(() -> new DocumentNotFoundException("Document not found: " + documentId));
 
         try {
             InputStream inputStream = storageProvider.retrieve(doc.getStoragePath());
@@ -118,20 +111,5 @@ public class FileStorageDomainService implements DocumentStorageUseCase {
         } catch (Exception e) {
             throw new StorageFailedException("Failed to retrieve document content: " + documentId, e);
         }
-    }
-
-    private String determineContentType(String filename) {
-        if (filename == null) {
-            return "application/octet-stream";
-        }
-        String lower = filename.toLowerCase();
-        if (lower.endsWith(".pdf")) {
-            return "application/pdf";
-        } else if (lower.endsWith(".xml")) {
-            return "application/xml";
-        } else if (lower.endsWith(".json")) {
-            return "application/json";
-        }
-        return "application/octet-stream";
     }
 }

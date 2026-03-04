@@ -22,6 +22,11 @@ import org.springframework.stereotype.Component;
 @Slf4j
 public class SagaCommandAdapter extends RouteBuilder {
 
+    // Retry configuration constants
+    private static final long INITIAL_REDELIVERY_DELAY_MS = 1000L;
+    private static final int BACKOFF_MULTIPLIER = 2;
+    private static final long MAX_REDELIVERY_DELAY_MS = 10000L;
+
     private final SagaCommandUseCase sagaCommandUseCase;
 
     @Value("${app.kafka.bootstrap-servers}")
@@ -70,10 +75,10 @@ public class SagaCommandAdapter extends RouteBuilder {
         // Global error handler with Dead Letter Channel
         errorHandler(deadLetterChannel("kafka:" + dlqTopic + "?brokers=" + kafkaBrokers)
                 .maximumRedeliveries(maxRedeliveries)
-                .redeliveryDelay(1000)
+                .redeliveryDelay(INITIAL_REDELIVERY_DELAY_MS)
                 .useExponentialBackOff()
-                .backOffMultiplier(2)
-                .maximumRedeliveryDelay(10000)
+                .backOffMultiplier(BACKOFF_MULTIPLIER)
+                .maximumRedeliveryDelay(MAX_REDELIVERY_DELAY_MS)
                 .logExhausted(true)
                 .logStackTrace(true)
                 .retryAttemptedLogLevel(org.apache.camel.LoggingLevel.WARN));

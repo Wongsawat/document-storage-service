@@ -7,6 +7,7 @@ import com.wpanther.storage.domain.event.DocumentStoredEvent;
 import com.wpanther.storage.domain.event.DocumentStorageReplyEvent;
 import com.wpanther.storage.domain.event.PdfStorageReplyEvent;
 import com.wpanther.storage.domain.event.SignedXmlStorageReplyEvent;
+import com.wpanther.storage.domain.exception.StorageFailedException;
 import com.wpanther.storage.domain.port.outbound.MessagePublisherPort;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -46,7 +47,7 @@ public class MessagePublisherAdapter implements MessagePublisherPort {
 
         } catch (Exception e) {
             log.error("Failed to publish DocumentStoredEvent", e);
-            throw new RuntimeException("Failed to publish event", e);
+            throw new StorageFailedException("Failed to publish event", e);
         }
     }
 
@@ -67,7 +68,7 @@ public class MessagePublisherAdapter implements MessagePublisherPort {
 
         } catch (Exception e) {
             log.error("Failed to publish DocumentStorageReplyEvent", e);
-            throw new RuntimeException("Failed to publish reply", e);
+            throw new StorageFailedException("Failed to publish reply", e);
         }
     }
 
@@ -88,7 +89,7 @@ public class MessagePublisherAdapter implements MessagePublisherPort {
 
         } catch (Exception e) {
             log.error("Failed to publish SignedXmlStorageReplyEvent", e);
-            throw new RuntimeException("Failed to publish reply", e);
+            throw new StorageFailedException("Failed to publish reply", e);
         }
     }
 
@@ -109,7 +110,7 @@ public class MessagePublisherAdapter implements MessagePublisherPort {
 
         } catch (Exception e) {
             log.error("Failed to publish PdfStorageReplyEvent", e);
-            throw new RuntimeException("Failed to publish reply", e);
+            throw new StorageFailedException("Failed to publish reply", e);
         }
     }
 }
