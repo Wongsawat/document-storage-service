@@ -1,4 +1,4 @@
-package com.wpanther.storage.infrastructure.security.config;
+package com.wpanther.storage.infrastructure.adapter.inbound.security.config;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;

@@ -1,7 +1,7 @@
-package com.wpanther.storage.application.controller;
+package com.wpanther.storage.infrastructure.adapter.inbound.rest;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.wpanther.storage.application.service.DocumentStorageService;
+import com.wpanther.storage.domain.port.inbound.DocumentStorageUseCase;
 import com.wpanther.storage.domain.model.DocumentType;
 import com.wpanther.storage.domain.model.StoredDocument;
 import org.junit.jupiter.api.AfterEach;
@@ -17,6 +17,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import java.time.LocalDateTime;
+import java.util.Optional;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.*;
@@ -34,7 +35,7 @@ class DocumentStorageControllerTest {
     private ObjectMapper objectMapper;
 
     @Mock
-    private DocumentStorageService storageService;
+    private DocumentStorageUseCase documentStorageUseCase;
 
     private AutoCloseable closeable;
 
@@ -43,7 +44,7 @@ class DocumentStorageControllerTest {
         closeable = MockitoAnnotations.openMocks(this);
         objectMapper = new ObjectMapper();
 
-        DocumentStorageController controller = new DocumentStorageController(storageService);
+        DocumentStorageController controller = new DocumentStorageController(documentStorageUseCase);
         mockMvc = MockMvcBuilders.standaloneSetup(controller).build();
     }
 
@@ -77,7 +78,7 @@ class DocumentStorageControllerTest {
                     .checksum("abc123")
                     .build();
 
-            when(storageService.storeDocument(
+            when(documentStorageUseCase.storeDocument(
                     any(byte[].class), eq("invoice.pdf"), eq("application/pdf"),
                     eq(DocumentType.OTHER), isNull(), isNull()
             )).thenReturn(storedDocument);
@@ -115,7 +116,7 @@ class DocumentStorageControllerTest {
                     .checksum("hash123")
                     .build();
 
-            when(storageService.storeDocument(
+            when(documentStorageUseCase.storeDocument(
                     any(byte[].class), eq("invoice.pdf"), eq("application/pdf"),
                     eq(DocumentType.INVOICE_PDF), eq("INV-001"), eq("INV-2024-001")
             )).thenReturn(storedDocument);
@@ -141,7 +142,7 @@ class DocumentStorageControllerTest {
                     "Error content".getBytes()
             );
 
-            when(storageService.storeDocument(
+            when(documentStorageUseCase.storeDocument(
                     any(byte[].class), anyString(), anyString(),
                     any(DocumentType.class), any(), any()
             )).thenThrow(new RuntimeException("Storage failure"));
@@ -177,8 +178,8 @@ class DocumentStorageControllerTest {
                     .checksum("hash123")
                     .build();
 
-            when(storageService.getDocument(documentId)).thenReturn(document);
-            when(storageService.getDocumentContent(documentId)).thenReturn(content);
+            when(documentStorageUseCase.getDocument(documentId)).thenReturn(Optional.of(document));
+            when(documentStorageUseCase.getDocumentContent(documentId)).thenReturn(content);
 
             // When & Then
             mockMvc.perform(get("/api/v1/documents/{id}", documentId))
@@ -193,7 +194,7 @@ class DocumentStorageControllerTest {
         void shouldReturn404WhenNotFound() throws Exception {
             // Given
             String documentId = "non-existent";
-            when(storageService.getDocument(documentId))
+            when(documentStorageUseCase.getDocument(documentId))
                     .thenThrow(new IllegalArgumentException("Document not found"));
 
             // When & Then
@@ -206,7 +207,7 @@ class DocumentStorageControllerTest {
         void shouldReturn500OnError() throws Exception {
             // Given
             String documentId = "doc-error";
-            when(storageService.getDocument(documentId)).thenReturn(
+            when(documentStorageUseCase.getDocument(documentId)).thenReturn(Optional.of(
                     StoredDocument.builder()
                             .id(documentId)
                             .fileName("error.pdf")
@@ -216,8 +217,8 @@ class DocumentStorageControllerTest {
                             .fileSize(100L)
                             .checksum("hash")
                             .build()
-            );
-            when(storageService.getDocumentContent(documentId))
+            ));
+            when(documentStorageUseCase.getDocumentContent(documentId))
                     .thenThrow(new RuntimeException("Read error"));
 
             // When & Then
@@ -249,7 +250,7 @@ class DocumentStorageControllerTest {
                     .invoiceNumber("INV-2024-001")
                     .build();
 
-            when(storageService.getDocument(documentId)).thenReturn(document);
+            when(documentStorageUseCase.getDocument(documentId)).thenReturn(Optional.of(document));
 
             // When & Then
             mockMvc.perform(get("/api/v1/documents/{id}/metadata", documentId))
@@ -268,7 +269,7 @@ class DocumentStorageControllerTest {
         @DisplayName("Should return 404 when metadata not found")
         void shouldReturn404WhenMetadataNotFound() throws Exception {
             // Given
-            when(storageService.getDocument("non-existent"))
+            when(documentStorageUseCase.getDocument("non-existent"))
                     .thenThrow(new IllegalArgumentException("Document not found"));
 
             // When & Then
@@ -293,7 +294,7 @@ class DocumentStorageControllerTest {
                     .invoiceNumber(null)
                     .build();
 
-            when(storageService.getDocument("doc-123")).thenReturn(document);
+            when(documentStorageUseCase.getDocument("doc-123")).thenReturn(Optional.of(document));
 
             // When & Then
             mockMvc.perform(get("/api/v1/documents/{id}/metadata", "doc-123"))
@@ -312,7 +313,7 @@ class DocumentStorageControllerTest {
         void shouldDeleteSuccessfully() throws Exception {
             // Given
             String documentId = "doc-123";
-            when(storageService.getDocument(documentId)).thenReturn(
+            when(documentStorageUseCase.getDocument(documentId)).thenReturn(Optional.of(
                     StoredDocument.builder()
                             .id(documentId)
                             .fileName("delete.pdf")
@@ -322,8 +323,8 @@ class DocumentStorageControllerTest {
                             .fileSize(100L)
                             .checksum("hash")
                             .build()
-            );
-            doNothing().when(storageService).deleteDocument(documentId);
+            ));
+            doNothing().when(documentStorageUseCase).deleteDocument(documentId);
 
             // When & Then
             mockMvc.perform(delete("/api/v1/documents/{id}", documentId))
@@ -335,7 +336,7 @@ class DocumentStorageControllerTest {
         void shouldReturn404WhenDeletingNonExistent() throws Exception {
             // Given
             doThrow(new IllegalArgumentException("Document not found"))
-                    .when(storageService).deleteDocument("non-existent");
+                    .when(documentStorageUseCase).deleteDocument("non-existent");
 
             // When & Then
             mockMvc.perform(delete("/api/v1/documents/{id}", "non-existent"))
@@ -347,7 +348,7 @@ class DocumentStorageControllerTest {
         void shouldReturn500OnDeleteError() throws Exception {
             // Given
             String documentId = "doc-error";
-            when(storageService.getDocument(documentId)).thenReturn(
+            when(documentStorageUseCase.getDocument(documentId)).thenReturn(Optional.of(
                     StoredDocument.builder()
                             .id(documentId)
                             .fileName("error.pdf")
@@ -357,9 +358,9 @@ class DocumentStorageControllerTest {
                             .fileSize(100L)
                             .checksum("hash")
                             .build()
-            );
+            ));
             doThrow(new RuntimeException("Delete failed"))
-                    .when(storageService).deleteDocument(documentId);
+                    .when(documentStorageUseCase).deleteDocument(documentId);
 
             // When & Then
             mockMvc.perform(delete("/api/v1/documents/{id}", documentId))
@@ -399,9 +400,9 @@ class DocumentStorageControllerTest {
                             .documentType(DocumentType.ATTACHMENT)
                             .createdAt(LocalDateTime.of(2024, 1, 1, 11, 0))
                             .build()
-            );
+            ));
 
-            when(storageService.findByInvoiceId(invoiceId)).thenReturn(documents);
+            when(documentStorageUseCase.getDocumentsByInvoice(invoiceId)).thenReturn(documents);
 
             // When & Then
             mockMvc.perform(get("/api/v1/documents/invoice/{invoiceId}", invoiceId))
@@ -418,7 +419,7 @@ class DocumentStorageControllerTest {
         @DisplayName("Should return empty list when no documents found")
         void shouldReturnEmptyList() throws Exception {
             // Given
-            when(storageService.findByInvoiceId("INV-EMPTY")).thenReturn(List.of());
+            when(documentStorageUseCase.getDocumentsByInvoice("INV-EMPTY")).thenReturn(List.of());
 
             // When & Then
             mockMvc.perform(get("/api/v1/documents/invoice/{invoiceId}", "INV-EMPTY"))

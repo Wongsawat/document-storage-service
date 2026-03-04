@@ -1,4 +1,4 @@
-package com.wpanther.storage.infrastructure.storage;
+package com.wpanther.storage.domain.service;
 
 import com.wpanther.storage.domain.service.FileStorageProvider;
 import org.junit.jupiter.api.DisplayName;

@@ -1,4 +1,4 @@
-package com.wpanther.storage.infrastructure.storage;
+package com.wpanther.storage.infrastructure.adapter.outbound.storage;
 
 import com.wpanther.storage.domain.service.FileStorageProvider;
 import org.junit.jupiter.api.AfterEach;
@@ -15,24 +15,24 @@ import java.nio.file.Path;
 
 import static org.assertj.core.api.Assertions.*;
 
-@DisplayName("LocalFileStorageProvider Tests")
-class LocalFileStorageProviderTest {
+@DisplayName("LocalFileStorageAdapter Tests")
+class LocalFileStorageAdapterTest {
 
-    private LocalFileStorageProvider storageProvider;
+    private LocalFileStorageAdapter storageProvider;
 
     @TempDir
     Path tempDir;
 
     @BeforeEach
     void setUp() {
-        storageProvider = new LocalFileStorageProvider();
+        storageProvider = new LocalFileStorageAdapter();
         // Use reflection to set basePath to temp directory
         try {
-            java.lang.reflect.Field basePathField = LocalFileStorageProvider.class.getDeclaredField("basePath");
+            java.lang.reflect.Field basePathField = LocalFileStorageAdapter.class.getDeclaredField("basePath");
             basePathField.setAccessible(true);
             basePathField.set(storageProvider, tempDir.toString());
 
-            java.lang.reflect.Field baseUrlField = LocalFileStorageProvider.class.getDeclaredField("baseUrl");
+            java.lang.reflect.Field baseUrlField = LocalFileStorageAdapter.class.getDeclaredField("baseUrl");
             baseUrlField.setAccessible(true);
             baseUrlField.set(storageProvider, "http://localhost:8084");
         } catch (Exception e) {
@@ -204,7 +204,7 @@ class LocalFileStorageProviderTest {
         // When
         FileStorageProvider.StorageResult result = storageProvider.store(content, fileName);
 
-        // Then - LocalFileStorageProvider only keeps the last extension
+        // Then - LocalFileStorageAdapter only keeps the last extension
         assertThat(result.path()).endsWith(".gz");
     }
 

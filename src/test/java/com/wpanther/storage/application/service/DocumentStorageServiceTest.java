@@ -3,8 +3,8 @@ package com.wpanther.storage.application.service;
 import com.wpanther.storage.domain.model.DocumentType;
 import com.wpanther.storage.domain.model.StoredDocument;
 import com.wpanther.storage.domain.service.FileStorageProvider;
-import com.wpanther.storage.infrastructure.persistence.MongoDocumentRepository;
-import com.wpanther.storage.infrastructure.persistence.StoredDocumentEntity;
+import com.wpanther.storage.infrastructure.adapter.outbound.persistence.MongoDocumentAdapter;
+import com.wpanther.storage.infrastructure.adapter.outbound.persistence.StoredDocumentEntity;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -27,7 +27,7 @@ import static org.mockito.Mockito.*;
 class DocumentStorageServiceTest {
 
     @Mock
-    private MongoDocumentRepository repository;
+    private MongoDocumentAdapter repository;
 
     @Mock
     private FileStorageProvider storageProvider;
