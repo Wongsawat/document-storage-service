@@ -400,7 +400,7 @@ class DocumentStorageControllerTest {
                             .documentType(DocumentType.ATTACHMENT)
                             .createdAt(LocalDateTime.of(2024, 1, 1, 11, 0))
                             .build()
-            ));
+            );
 
             when(documentStorageUseCase.getDocumentsByInvoice(invoiceId)).thenReturn(documents);
 
