@@ -1,6 +1,6 @@
 package com.wpanther.storage.domain.port.outbound;
 
-import com.wpanther.saga.commons.outbox.OutboxEvent;
+import com.wpanther.saga.domain.outbox.OutboxEvent;
 
 /**
  * Outbound port for outbox event persistence.
