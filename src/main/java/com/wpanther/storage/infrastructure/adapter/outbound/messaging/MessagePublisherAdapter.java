@@ -3,6 +3,7 @@ package com.wpanther.storage.infrastructure.adapter.outbound.messaging;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.wpanther.saga.domain.outbox.OutboxEvent;
 import com.wpanther.saga.domain.outbox.OutboxEventRepository;
+import com.wpanther.saga.domain.outbox.OutboxStatus;
 import com.wpanther.storage.domain.event.DocumentStoredEvent;
 import com.wpanther.storage.domain.event.DocumentStorageReplyEvent;
 import com.wpanther.storage.domain.event.PdfStorageReplyEvent;
@@ -12,6 +13,9 @@ import com.wpanther.storage.domain.port.outbound.MessagePublisherPort;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
+
+import java.time.Instant;
+import java.util.UUID;
 
 /**
  * Message publisher adapter using the outbox pattern.
@@ -35,11 +39,15 @@ public class MessagePublisherAdapter implements MessagePublisherPort {
         try {
             String payload = objectMapper.writeValueAsString(event);
             OutboxEvent outbox = OutboxEvent.builder()
+                .id(UUID.randomUUID())
                 .aggregateId(event.getDocumentId())
                 .aggregateType("StoredDocument")
                 .eventType("DocumentStoredEvent")
                 .payload(payload)
                 .topic("document.stored")
+                .status(OutboxStatus.PENDING)
+                .createdAt(Instant.now())
+                .retryCount(0)
                 .build();
 
             outboxRepository.save(outbox);
@@ -56,11 +64,15 @@ public class MessagePublisherAdapter implements MessagePublisherPort {
         try {
             String payload = objectMapper.writeValueAsString(reply);
             OutboxEvent outbox = OutboxEvent.builder()
+                .id(UUID.randomUUID())
                 .aggregateId(reply.getSagaId())
                 .aggregateType("DocumentStorageSaga")
                 .eventType("DocumentStorageReplyEvent")
                 .payload(payload)
                 .topic("saga.reply.document-storage")
+                .status(OutboxStatus.PENDING)
+                .createdAt(Instant.now())
+                .retryCount(0)
                 .build();
 
             outboxRepository.save(outbox);
@@ -77,11 +89,15 @@ public class MessagePublisherAdapter implements MessagePublisherPort {
         try {
             String payload = objectMapper.writeValueAsString(reply);
             OutboxEvent outbox = OutboxEvent.builder()
+                .id(UUID.randomUUID())
                 .aggregateId(reply.getSagaId())
                 .aggregateType("SignedXmlStorageSaga")
                 .eventType("SignedXmlStorageReplyEvent")
                 .payload(payload)
                 .topic("saga.reply.signedxml-storage")
+                .status(OutboxStatus.PENDING)
+                .createdAt(Instant.now())
+                .retryCount(0)
                 .build();
 
             outboxRepository.save(outbox);
@@ -98,11 +114,15 @@ public class MessagePublisherAdapter implements MessagePublisherPort {
         try {
             String payload = objectMapper.writeValueAsString(reply);
             OutboxEvent outbox = OutboxEvent.builder()
+                .id(UUID.randomUUID())
                 .aggregateId(reply.getSagaId())
                 .aggregateType("PdfStorageSaga")
                 .eventType("PdfStorageReplyEvent")
                 .payload(payload)
                 .topic("saga.reply.pdf-storage")
+                .status(OutboxStatus.PENDING)
+                .createdAt(Instant.now())
+                .retryCount(0)
                 .build();
 
             outboxRepository.save(outbox);
