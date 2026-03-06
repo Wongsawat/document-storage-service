@@ -24,8 +24,12 @@ import java.util.function.Function;
 @Service
 @Slf4j
 public class JwtService {
-
-    @Value("${app.security.jwt.secret:404E635266556A586E3272354E39423F4428472B4B6250645367566B59703373367639792F423F4528482B4D6251655468576D5A7134743777397A24432646294A404E635266556A586E3272357538782F413F4428472B4B6250645367566B59703373367639792F425A452D4A614E645267556B58703273357538782F413F4428472B4B6250645367533879")
+    /**
+     * JWT secret key (base64-encoded).
+     * MUST be configured via environment variable (JWT_SECRET).
+     * Using a default value here would be a security vulnerability.
+     */
+    @Value("${app.security.jwt.secret}")
     private String secretKey;
 
     @Value("${app.security.jwt.expiration:86400000}") // 24 hours default
