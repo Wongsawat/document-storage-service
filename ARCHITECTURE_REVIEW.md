@@ -501,7 +501,7 @@ public SignedDocument sign(Document doc) { ... }
 - Added fallback methods for graceful degradation
 - Created comprehensive `docs/CIRCUIT_BREAKER.md` guide
 
-#### Issue #6: No Integration Tests for Full Saga Flow
+#### Issue #6: ~~No Integration Tests for Full Saga Flow~~ ✅ RESOLVED
 
 **Severity:** LOW
 **Impact:** Less confidence in end-to-end flows
@@ -519,6 +519,15 @@ class SagaIntegrationTest {
     }
 }
 ```
+
+**Status:** ✅ Fixed - Added Testcontainers-based integration tests (commit c3f5961)
+
+**Implementation:**
+- Created `SagaFlowIntegrationTest` with real Kafka, PostgreSQL, MongoDB containers
+- Tests verify transactional outbox pattern (CDC foundation)
+- Created `application-test.yml` for test configuration
+- Added Awaitility dependency for async testing
+- Tests cover: document/outbox creation, orphaned detection, reconciliation queries
 
 ---
 
