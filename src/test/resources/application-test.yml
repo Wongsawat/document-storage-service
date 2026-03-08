@@ -1,0 +1,53 @@
+spring:
+  application:
+    name: document-storage-service
+
+  # PostgreSQL configuration for tests
+  datasource:
+    url: ${POSTGRES_JDBC_URL:jdbc:postgresql://localhost:5433/documentstorage_test}
+    username: test
+    password: test
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+  # MongoDB configuration for tests
+  data:
+    mongodb:
+      uri: ${MONGO_CONNECTION_STRING:mongodb://localhost:27018/document_storage_test}
+
+  # Flyway disabled for tests (schema created by Hibernate)
+  flyway:
+    enabled: false
+
+# Kafka configuration for tests
+kafka:
+  bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+  consumer:
+    auto-offset-reset: earliest
+    enable-auto-commit: false
+
+# Storage configuration
+app:
+  storage:
+    provider: local
+    local:
+      base-path: ${java.io.tmpdir}/test-documents
+      base-url: http://localhost:8084/api/v1/documents
+
+  # Disable reconciliation in tests
+  reconciliation:
+    enabled: false
+
+# Logging for tests
+logging:
+  level:
+    com.wpanther.storage: INFO
+    org.testcontainers: INFO
+    org.apache.camel: WARN
