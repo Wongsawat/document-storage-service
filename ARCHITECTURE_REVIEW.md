@@ -479,7 +479,7 @@ configuration.setAllowedHeaders(List.of(
 
 ### 9.3 LOW Priority
 
-#### Issue #5: Missing Circuit Breakers
+#### Issue #5: ~~Missing Circuit Breakers~~ ✅ RESOLVED
 
 **Severity:** LOW
 **Impact:** No fault tolerance for external dependencies
@@ -491,6 +491,15 @@ configuration.setAllowedHeaders(List.of(
 @CircuitBreaker(name = "signingService", fallbackMethod = "signingFallback")
 public SignedDocument sign(Document doc) { ... }
 ```
+
+**Status:** ✅ Fixed - Implemented Resilience4j circuit breakers (commit 3921b22)
+
+**Implementation:**
+- Added Resilience4j Spring Boot 3 dependencies
+- Created `ResilienceConfig` with circuit breaker, retry, and time limiter registries
+- Protected `PdfDownloadDomainService` with `@CircuitBreaker`, `@Retry`, `@TimeLimiter`
+- Added fallback methods for graceful degradation
+- Created comprehensive `docs/CIRCUIT_BREAKER.md` guide
 
 #### Issue #6: No Integration Tests for Full Saga Flow
 
