@@ -118,8 +118,14 @@ public class SecurityConfig {
         // Configure allowed methods
         configuration.setAllowedMethods(java.util.List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
 
-        // Configure allowed headers
-        configuration.setAllowedHeaders(java.util.List.of("*"));
+        // Configure allowed headers (explicit list for security)
+        configuration.setAllowedHeaders(java.util.List.of(
+                "Authorization",
+                "Content-Type",
+                "Accept",
+                "X-Requested-With",
+                "X-Request-ID"
+        ));
 
         // Allow credentials
         configuration.setAllowCredentials(true);
