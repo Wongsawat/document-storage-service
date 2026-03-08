@@ -24,4 +24,22 @@ public interface MongoDocumentAdapter extends MongoRepository<StoredDocumentEnti
     List<StoredDocumentEntity> findByExpiresAtBefore(LocalDateTime dateTime);
 
     long countByDocumentType(DocumentType documentType);
+
+    /**
+     * Find documents created after a specific timestamp.
+     * Used for reconciliation to find recent documents.
+     */
+    List<StoredDocumentEntity> findByCreatedAtAfter(LocalDateTime timestamp);
+
+    /**
+     * Find documents created before a specific timestamp.
+     * Used for cleanup to find old documents.
+     */
+    List<StoredDocumentEntity> findByCreatedAtBefore(LocalDateTime timestamp);
+
+    /**
+     * Count documents created after a specific timestamp.
+     * Used for reconciliation statistics.
+     */
+    long countByCreatedAtAfter(LocalDateTime timestamp);
 }

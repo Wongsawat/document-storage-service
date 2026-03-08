@@ -28,4 +28,15 @@ public interface SpringDataOutboxRepository extends JpaRepository<OutboxEventEnt
     @Modifying
     @Query("DELETE FROM OutboxEventEntity e WHERE e.status = 'PUBLISHED' AND e.publishedAt < :before")
     int deletePublishedBefore(@Param("before") Instant before);
+
+    /**
+     * Check if an outbox event exists for the given aggregate ID and type.
+     */
+    boolean existsByAggregateIdAndType(String aggregateId, String eventType);
+
+    /**
+     * Check if any outbox event exists for the given aggregate ID.
+     */
+    @Query("SELECT CASE WHEN COUNT(e) > 0 THEN true ELSE false END FROM OutboxEventEntity e WHERE e.aggregateId = :aggregateId")
+    boolean existsByAggregateId(@Param("aggregateId") String aggregateId);
 }

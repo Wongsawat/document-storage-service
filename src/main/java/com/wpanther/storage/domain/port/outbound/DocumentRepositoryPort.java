@@ -89,4 +89,37 @@ public interface DocumentRepositoryPort {
      * @return true if a matching document exists, false otherwise
      */
     boolean existsByInvoiceIdAndDocumentType(String invoiceId, DocumentType type);
+
+    /**
+     * Find documents created after a specific timestamp.
+     * <p>
+     * Used for reconciliation to find recent documents.
+     * </p>
+     *
+     * @param timestamp the cutoff timestamp
+     * @return list of documents created after the timestamp
+     */
+    List<StoredDocument> findByCreatedAtAfter(java.time.LocalDateTime timestamp);
+
+    /**
+     * Find documents created before a specific timestamp.
+     * <p>
+     * Used for cleanup to find old documents.
+     * </p>
+     *
+     * @param timestamp the cutoff timestamp
+     * @return list of documents created before the timestamp
+     */
+    List<StoredDocument> findByCreatedAtBefore(java.time.LocalDateTime timestamp);
+
+    /**
+     * Count documents created after a specific timestamp.
+     * <p>
+     * Used for reconciliation statistics.
+     * </p>
+     *
+     * @param timestamp the cutoff timestamp
+     * @return count of documents created after the timestamp
+     */
+    long countByCreatedAtAfter(java.time.LocalDateTime timestamp);
 }

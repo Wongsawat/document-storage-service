@@ -132,8 +132,15 @@ app:
       max-attempts: ${RATE_LIMIT_MAX_ATTEMPTS:5}
       window-seconds: ${RATE_LIMIT_WINDOW_SECONDS:60}
       block-duration-seconds: ${RATE_LIMIT_BLOCK_DURATION_SECONDS:300}
+    # Outbox reconciliation configuration
+    reconciliation:
+      enabled: ${RECONCILIATION_ENABLED:true}
+      batch-size: ${RECONCILIATION_BATCH_SIZE:100}
+      lookback-minutes: ${RECONCILIATION_LOOKBACK_MINUTES:60}
+      retention-days: ${RECONCILIATION_RETENTION_DAYS:30}
+      cron: "${RECONCILIATION_CRON:0 */15 * * * *}"
+      cleanup-cron: "${RECONCILIATION_CLEANUP_CRON:0 0 2 * * *}"
 
-# Actuator endpoints
 management:
   endpoints:
     web:
