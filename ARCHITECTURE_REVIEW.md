@@ -408,30 +408,25 @@ public void processSagaCommand() {
 
 ### 9.1 HIGH Priority
 
-#### Issue #1: MongoDB + PostgreSQL Dual-Write Consistency
+#### Issue #1: ~~MongoDB + PostgreSQL Dual-Write Consistency~~ ✅ RESOLVED
 
 **Severity:** HIGH
 **Impact:** Data inconsistency potential
 
 **Problem:** No transactional guarantee between MongoDB (document metadata) and PostgreSQL (outbox).
 
-**Recommendation:** Implement **outbox reconciliation job**:
-```java
-@Scheduled(fixedRate = 300000) // Every 5 minutes
-public void reconcileOutbox() {
-    // Find documents without outbox events
-    // Create compensation events or alerts
-}
-```
+**Status:** ✅ Fixed - Implemented outbox reconciliation service (commit a2f1ea1)
 
-#### Issue #2: CORS Configuration Too Permissive
+#### Issue #2: ~~CORS Configuration Too Permissive~~ ✅ RESOLVED
 
 **Severity:** MEDIUM
 **Impact:** Security concern
 
 **Problem:** `setAllowedHeaders("*")` allows any header.
 
-**Fix:**
+**Status:** ✅ Fixed - Replaced with explicit header list (commit 6057889)
+
+**Fix applied:**
 ```java
 configuration.setAllowedHeaders(List.of(
     "Authorization", "Content-Type", "Accept",
