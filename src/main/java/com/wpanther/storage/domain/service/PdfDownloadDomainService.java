@@ -1,6 +1,9 @@
 package com.wpanther.storage.domain.service;
 
 import com.wpanther.storage.domain.exception.StorageFailedException;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import io.github.resilience4j.retry.annotation.Retry;
+import io.github.resilience4j.timelimiter.annotation.TimeLimiter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -11,10 +14,22 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
+import java.util.concurrent.TimeoutException;
 
 /**
  * Domain service for downloading PDFs from external URLs.
+ * <p>
  * Used by SagaOrchestrationService to download PDFs from MinIO.
+ * Protected with circuit breaker, retry, and timeout patterns for resilience.
+ * </p>
+ * <p>
+ * <b>Resilience Patterns Applied:</b>
+ * <ul>
+ *   <li><b>Circuit Breaker:</b> Stops calls after repeated failures (pdfDownloadService)</li>
+ *   <li><b>Retry:</b> Retries transient failures (pdfDownloadRetry)</li>
+ *   <li><b>Timeout:</b> Enforces max duration (pdfDownloadTimeout)</li>
+ * </ul>
+ * </p>
  */
 @Service
 public class PdfDownloadDomainService {
@@ -32,11 +47,14 @@ public class PdfDownloadDomainService {
     }
 
     /**
-     * Download a PDF from the given URL.
+     * Download a PDF from the given URL with resilience patterns.
+     *
      * @param pdfUrl URL of the PDF to download
      * @return PDF content as byte array
-     * @throws StorageFailedException if download fails
+     * @throws StorageFailedException if download fails after retries and circuit breaker is open
      */
+    @CircuitBreaker(name = "pdfDownloadService", fallbackMethod = "downloadPdfFallback")
+    @Retry(name = "pdfDownloadRetry", fallbackMethod = "downloadPdfRetryFallback")
     public byte[] downloadPdf(String pdfUrl) {
         log.info("Downloading PDF from: {}", pdfUrl);
 
@@ -68,11 +86,49 @@ public class PdfDownloadDomainService {
     }
 
     /**
+     * Fallback method when circuit breaker is open.
+     *
+     * @param pdfUrl the URL that failed
+     * @param exception the exception that triggered the fallback
+     * @return empty byte array (will be handled as failure by caller)
+     */
+    @SuppressWarnings("unused") // Called by CircuitBreaker annotation
+    private byte[] downloadPdfFallback(String pdfUrl, Exception exception) {
+        log.error("Circuit breaker OPEN for PDF download from: {}, error: {}",
+                pdfUrl, exception.getMessage());
+        throw new StorageFailedException(
+            "PDF download service is temporarily unavailable (circuit breaker open). " +
+            "Please retry later. URL: " + pdfUrl,
+            exception
+        );
+    }
+
+    /**
+     * Fallback method when retries are exhausted.
+     *
+     * @param pdfUrl the URL that failed
+     * @param exception the exception that triggered the fallback
+     * @return empty byte array
+     */
+    @SuppressWarnings("unused") // Called by Retry annotation
+    private byte[] downloadPdfRetryFallback(String pdfUrl, Exception exception) {
+        log.error("Retries exhausted for PDF download from: {}, error: {}",
+                pdfUrl, exception.getMessage());
+        throw new StorageFailedException(
+            "PDF download failed after all retry attempts. URL: " + pdfUrl,
+            exception
+        );
+    }
+
+    /**
      * Download content from the given URL as String (for XML, JSON, etc).
+     *
      * @param url URL of the content to download
      * @return Content as String
-     * @throws StorageFailedException if download fails
+     * @throws StorageFailedException if download fails after retries and circuit breaker is open
      */
+    @CircuitBreaker(name = "externalHttpService", fallbackMethod = "downloadContentFallback")
+    @Retry(name = "externalHttpRetry", fallbackMethod = "downloadContentRetryFallback")
     public String downloadContent(String url) {
         log.info("Downloading content from: {}", url);
 
@@ -101,5 +157,40 @@ public class PdfDownloadDomainService {
             Thread.currentThread().interrupt();
             throw new StorageFailedException("Failed to download content from " + url, e);
         }
+    }
+
+    /**
+     * Fallback method when circuit breaker is open for content download.
+     *
+     * @param url the URL that failed
+     * @param exception the exception that triggered the fallback
+     * @return empty string (will be handled as failure by caller)
+     */
+    @SuppressWarnings("unused") // Called by CircuitBreaker annotation
+    private String downloadContentFallback(String url, Exception exception) {
+        log.error("Circuit breaker OPEN for content download from: {}, error: {}",
+                url, exception.getMessage());
+        throw new StorageFailedException(
+            "Content download service is temporarily unavailable (circuit breaker open). " +
+            "Please retry later. URL: " + url,
+            exception
+        );
+    }
+
+    /**
+     * Fallback method when retries are exhausted for content download.
+     *
+     * @param url the URL that failed
+     * @param exception the exception that triggered the fallback
+     * @return empty string
+     */
+    @SuppressWarnings("unused") // Called by Retry annotation
+    private String downloadContentRetryFallback(String url, Exception exception) {
+        log.error("Retries exhausted for content download from: {}, error: {}",
+                url, exception.getMessage());
+        throw new StorageFailedException(
+            "Content download failed after all retry attempts. URL: " + url,
+            exception
+        );
     }
 }

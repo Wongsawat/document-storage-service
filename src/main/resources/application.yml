@@ -216,3 +216,51 @@ otel:
       ratio: ${OTEL_TRACES_SAMPLER_RATIO:0.1}  # 10% sampling
   metrics:
     exporter: ${OTEL_METRICS_EXPORTER:otlp}  # otlp, prometheus, none
+
+# Resilience4j configuration for circuit breakers, retry, and time limiter
+resilience4j:
+  circuitbreaker:
+    configs:
+      default:
+        sliding-window-size: 100
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 30s
+        permitted-number-of-calls-in-half-open-state: 10
+        record-exceptions:
+          - java.io.IOException
+          - java.lang.InterruptedException
+        ignore-exceptions:
+          - java.lang.IllegalArgumentException
+    instances:
+      pdfDownloadService:
+        base-config: default
+      externalHttpService:
+        base-config: default
+
+  retry:
+    configs:
+      default:
+        max-attempts: 3
+        wait-duration: 500ms
+        retry-exceptions:
+          - java.io.IOException
+          - java.lang.InterruptedException
+        ignore-exceptions:
+          - java.lang.IllegalArgumentException
+        enable-exponential-backoff: true
+        exponential-backoff-multiplier: 2
+    instances:
+      pdfDownloadRetry:
+        base-config: default
+      externalHttpRetry:
+        base-config: default
+
+  timelimiter:
+    configs:
+      default:
+        timeout-duration: 30s
+    instances:
+      pdfDownloadTimeout:
+        base-config: default
+      externalHttpTimeout:
+        base-config: default

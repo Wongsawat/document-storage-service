@@ -226,6 +226,20 @@
             <artifactId>micrometer-registry-prometheus</artifactId>
         </dependency>
 
+
+        <!-- Resilience4j for circuit breakers and resilience patterns -->
+        <dependency>
+            <groupId>io.github.resilience4j</groupId>
+            <artifactId>resilience4j-spring-boot3</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.github.resilience4j</groupId>
+            <artifactId>resilience4j-retry</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.github.resilience4j</groupId>
+            <artifactId>resilience4j-timelimiter</artifactId>
+        </dependency>
         <!-- OpenTelemetry for distributed tracing -->
         <dependency>
             <groupId>io.micrometer</groupId>
