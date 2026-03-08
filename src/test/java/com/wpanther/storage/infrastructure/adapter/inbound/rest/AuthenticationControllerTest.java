@@ -1,15 +1,22 @@
 package com.wpanther.storage.infrastructure.adapter.inbound.rest;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.wpanther.storage.domain.port.outbound.DocumentRepositoryPort;
+import com.wpanther.storage.infrastructure.adapter.inbound.security.JwtAccessDeniedHandler;
+import com.wpanther.storage.infrastructure.adapter.inbound.security.JwtAuthenticationAdapter;
+import com.wpanther.storage.infrastructure.adapter.inbound.security.JwtAuthenticationEntryPoint;
 import com.wpanther.storage.infrastructure.adapter.inbound.security.JwtService;
+import com.wpanther.storage.infrastructure.adapter.inbound.security.RateLimitingFilter;
+import com.wpanther.storage.infrastructure.adapter.inbound.security.TokenBlacklistService;
+import com.wpanther.storage.domain.port.outbound.StorageProviderPort;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -18,6 +25,7 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.List;
@@ -31,15 +39,15 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(AuthenticationController.class)
-@Import(TestSecurityConfig.class)
+@AutoConfigureMockMvc(addFilters = false)
+@TestPropertySource(properties = {
+        "app.security.rate-limit.enabled=false"
+})
 @DisplayName("AuthenticationController Tests")
 class AuthenticationControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
-
-    @Autowired
-    private ObjectMapper objectMapper;
 
     @MockBean
     private JwtService jwtService;
@@ -49,6 +57,28 @@ class AuthenticationControllerTest {
 
     @MockBean
     private UserDetailsService userDetailsService;
+
+    @MockBean
+    private JwtAuthenticationAdapter jwtAuthenticationAdapter;
+
+    @MockBean
+    private JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
+
+    @MockBean
+    private JwtAccessDeniedHandler jwtAccessDeniedHandler;
+
+    @MockBean
+    private RateLimitingFilter rateLimitingFilter;
+
+    @MockBean
+    private TokenBlacklistService tokenBlacklistService;
+
+    // Mock beans needed to avoid loading issues
+    @MockBean
+    private DocumentRepositoryPort documentRepositoryPort;
+
+    @MockBean
+    private StorageProviderPort fileStorageProviderPort;
 
     private UserDetails testUser;
 
@@ -219,12 +249,11 @@ class AuthenticationControllerTest {
         }
 
         @Test
-        @DisplayName("Should return 401 for missing authorization header")
+        @DisplayName("Should return 400 for missing authorization header")
         void shouldReturn400ForMissingAuthHeader() throws Exception {
             mockMvc.perform(get("/api/v1/auth/validate"))
                     .andExpect(status().isBadRequest());
         }
-
         @Test
         @DisplayName("Should return 401 for invalid authorization header format")
         void shouldReturn401ForInvalidAuthHeaderFormat() throws Exception {

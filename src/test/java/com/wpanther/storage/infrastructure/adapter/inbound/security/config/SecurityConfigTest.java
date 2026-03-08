@@ -52,7 +52,7 @@ class SecurityConfigTest {
             var constructor = SecurityConfig.class.getDeclaredConstructors()[0];
             var parameters = constructor.getParameters();
 
-            assertEquals(4, parameters.length);
+            assertEquals(5, parameters.length);
         }
 
         @Test

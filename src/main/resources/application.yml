@@ -111,6 +111,10 @@ app:
       expiration: ${JWT_EXPIRATION:86400000}
       # JWT refresh token expiration in milliseconds (default: 7 days)
       refresh-expiration: ${JWT_REFRESH_EXPIRATION:604800000}
+      # Token blacklist configuration
+      blacklist:
+        size: ${JWT_BLACKLIST_SIZE:10000}
+        expire-hours: ${JWT_BLACKLIST_EXPIRE_HOURS:168}  # 7 days
     # Service credentials for inter-service authentication
     service:
       username: ${SERVICE_USERNAME:service-document-storage}
@@ -128,11 +132,6 @@ app:
       max-attempts: ${RATE_LIMIT_MAX_ATTEMPTS:5}
       window-seconds: ${RATE_LIMIT_WINDOW_SECONDS:60}
       block-duration-seconds: ${RATE_LIMIT_BLOCK_DURATION_SECONDS:300}
-    # Token blacklist configuration
-    jwt:
-      blacklist:
-        size: ${JWT_BLACKLIST_SIZE:10000}
-        expire-hours: ${JWT_BLACKLIST_EXPIRE_HOURS:168}  # 7 days
 
 # Actuator endpoints
 management:
