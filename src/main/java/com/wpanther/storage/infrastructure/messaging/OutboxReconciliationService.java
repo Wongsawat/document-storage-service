@@ -1,5 +1,6 @@
 package com.wpanther.storage.infrastructure.messaging;
 
+import com.wpanther.saga.domain.outbox.OutboxStatus;
 import com.wpanther.storage.domain.port.outbound.DocumentRepositoryPort;
 import com.wpanther.storage.domain.model.StoredDocument;
 import com.wpanther.storage.infrastructure.adapter.outbound.persistence.outbox.OutboxEventEntity;
@@ -162,13 +163,12 @@ public class OutboxReconciliationService {
      * @param document the orphaned document
      */
     private void handleOrphanedDocument(StoredDocument document) {
+        String invoiceId = document.getInvoiceId();
         log.warn("Handling orphaned document: id={}, invoiceId={}",
                 document.getId(),
-                document.getInvoiceId().orElse("N/A"));
+                invoiceId != null ? invoiceId : "N/A");
 
         try {
-            String invoiceId = document.getInvoiceId().orElse("unknown");
-
             // Create a compensating event to notify the system
             OutboxEventEntity compensatingEvent = OutboxEventEntity.builder()
                     .aggregateId(document.getId())
@@ -176,7 +176,7 @@ public class OutboxReconciliationService {
                     .eventType("DocumentOrphanedEvent")
                     .payload(formatOrphanedEventPayload(document, invoiceId))
                     .createdAt(java.time.Instant.now())
-                    .processed(false)
+                    .status(OutboxStatus.PENDING)
                     .build();
 
             outboxRepository.save(compensatingEvent);
@@ -194,10 +194,11 @@ public class OutboxReconciliationService {
      * Format the payload for the orphaned event.
      *
      * @param document the orphaned document
-     * @param invoiceId the invoice ID (may be "unknown" if not set)
+     * @param invoiceId the invoice ID (may be null if not set)
      * @return JSON payload string
      */
     private String formatOrphanedEventPayload(StoredDocument document, String invoiceId) {
+        String safeInvoiceId = invoiceId != null ? invoiceId : "unknown";
         return String.format("""
                 {
                     "documentId": "%s",
@@ -209,7 +210,7 @@ public class OutboxReconciliationService {
                 }
                 """,
                 document.getId(),
-                invoiceId,
+                safeInvoiceId,
                 document.getDocumentType(),
                 document.getStorageUrl(),
                 document.getCreatedAt(),

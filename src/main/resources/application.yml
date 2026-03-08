@@ -101,6 +101,18 @@ app:
       endpoint: ${S3_ENDPOINT:}
       path-style-access: ${S3_PATH_STYLE_ACCESS:false}
 
+  # API versioning configuration
+  api:
+    version:
+      current: ${API_VERSION_CURRENT:v1}
+      supported: ${API_VERSION_SUPPORTED:v1}
+      deprecated: ${API_VERSION_DEPRECATED:}
+      # Minimum deprecation period for old API versions (in days)
+      deprecation-period-days: ${API_DEPRECATION_PERIOD_DAYS:180}
+    # Base path for all REST endpoints
+    base-path: /api
+    # Enable API version header check (optional: X-API-Version header)
+    header-check-enabled: ${API_HEADER_CHECK_ENABLED:false}
   # Security configuration
   security:
     jwt:
