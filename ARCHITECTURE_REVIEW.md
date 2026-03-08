@@ -456,7 +456,7 @@ configuration.setAllowedHeaders(List.of(
 @RequestMapping("/api/v2/documents")  // Future changes
 ```
 
-#### Issue #4: No Distributed Tracing
+#### Issue #4: ~~No Distributed Tracing~~ ✅ RESOLVED
 
 **Severity:** MEDIUM
 **Impact:** Difficult to debug cross-service issues
@@ -468,6 +468,14 @@ configuration.setAllowedHeaders(List.of(
     <artifactId>opentelemetry-spring-boot-starter</artifactId>
 </dependency>
 ```
+
+**Status:** ✅ Fixed - Implemented OpenTelemetry distributed tracing (commit 12c2433)
+
+**Implementation:**
+- Added `micrometer-tracing-bridge-otel` for Micrometer integration
+- Added `opentelemetry-api` and `opentelemetry-exporter-otlp` dependencies
+- Created comprehensive `docs/DISTRIBUTED_TRACING.md` guide
+- Supports Jaeger, Grafana Tempo, and OpenTelemetry Collector
 
 ### 9.3 LOW Priority
 
