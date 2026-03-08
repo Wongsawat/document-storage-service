@@ -213,6 +213,13 @@
             <artifactId>commons-codec</artifactId>
         </dependency>
 
+        <!-- Caffeine for in-memory caching (token blacklist, rate limiting) -->
+        <dependency>
+            <groupId>com.github.ben-manes.caffeine</groupId>
+            <artifactId>caffeine</artifactId>
+            <version>3.1.8</version>
+        </dependency>
+
         <!-- Micrometer for metrics -->
         <dependency>
             <groupId>io.micrometer</groupId>

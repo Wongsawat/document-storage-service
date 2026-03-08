@@ -10,6 +10,8 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -37,6 +39,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 @DisplayName("JwtAuthenticationAdapter Tests")
 class JwtAuthenticationAdapterTest {
 
@@ -44,6 +47,7 @@ class JwtAuthenticationAdapterTest {
     private JwtService jwtService;
     private UserDetailsService userDetailsService;
     private FilterChain filterChain;
+    private TokenBlacklistService tokenBlacklistService;
 
     private static final String TEST_SECRET = Base64.getEncoder().encodeToString(
             "test-secret-key-for-testing-purposes-only-32bytes".getBytes(StandardCharsets.UTF_8)
@@ -53,28 +57,14 @@ class JwtAuthenticationAdapterTest {
 
     @BeforeEach
     void setUp() {
-        jwtService = new JwtService();
+        tokenBlacklistService = mock(TokenBlacklistService.class);
+        when(tokenBlacklistService.isRevoked(anyString())).thenReturn(false);
+
+        jwtService = new JwtService(TEST_SECRET, 86400000L, 604800000L, tokenBlacklistService);
         userDetailsService = mock(UserDetailsService.class);
         filterChain = mock(FilterChain.class);
 
         jwtAuthFilter = new JwtAuthenticationAdapter(jwtService, userDetailsService);
-
-        // Set test configuration via reflection
-        try {
-            var secretField = JwtService.class.getDeclaredField("secretKey");
-            secretField.setAccessible(true);
-            secretField.set(jwtService, TEST_SECRET);
-
-            var expirationField = JwtService.class.getDeclaredField("jwtExpiration");
-            expirationField.setAccessible(true);
-            expirationField.set(jwtService, 86400000L);
-
-            var refreshExpirationField = JwtService.class.getDeclaredField("refreshExpiration");
-            refreshExpirationField.setAccessible(true);
-            refreshExpirationField.set(jwtService, 604800000L);
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to set test configuration", e);
-        }
     }
 
     @AfterEach

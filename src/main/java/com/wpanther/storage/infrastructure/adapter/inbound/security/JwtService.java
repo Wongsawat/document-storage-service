@@ -20,23 +20,36 @@ import java.util.function.Function;
 /**
  * Service for JWT token generation and validation.
  * Uses HS256 algorithm with configurable secret key.
+ * <p>
+ * This service integrates with {@link TokenBlacklistService} to support token revocation.
  */
 @Service
 @Slf4j
 public class JwtService {
+
+    private final TokenBlacklistService tokenBlacklistService;
+    private final String secretKey;
+    private final long jwtExpiration;
+    private final long refreshExpiration;
+
     /**
-     * JWT secret key (base64-encoded).
-     * MUST be configured via environment variable (JWT_SECRET).
-     * Using a default value here would be a security vulnerability.
+     * Constructor with dependency injection.
+     *
+     * @param secretKey          JWT secret key (base64-encoded), MUST be configured via JWT_SECRET env variable
+     * @param jwtExpiration       JWT access token expiration in milliseconds (default: 24 hours)
+     * @param refreshExpiration   JWT refresh token expiration in milliseconds (default: 7 days)
+     * @param tokenBlacklistService Token blacklist service for revocation support
      */
-    @Value("${app.security.jwt.secret}")
-    private String secretKey;
-
-    @Value("${app.security.jwt.expiration:86400000}") // 24 hours default
-    private long jwtExpiration;
-
-    @Value("${app.security.jwt.refresh-expiration:604800000}") // 7 days default
-    private long refreshExpiration;
+    public JwtService(
+            @Value("${app.security.jwt.secret}") String secretKey,
+            @Value("${app.security.jwt.expiration:86400000}") long jwtExpiration,
+            @Value("${app.security.jwt.refresh-expiration:604800000}") long refreshExpiration,
+            TokenBlacklistService tokenBlacklistService) {
+        this.secretKey = secretKey;
+        this.jwtExpiration = jwtExpiration;
+        this.refreshExpiration = refreshExpiration;
+        this.tokenBlacklistService = tokenBlacklistService;
+    }
 
     /**
      * Extract username from token
@@ -75,12 +88,27 @@ public class JwtService {
     }
 
     /**
-     * Validate token against username
+     * Validate token against username.
+     * <p>
+     * Checks if the token:
+     * - Has not been revoked
+     * - Has the correct username
+     * - Has not expired
+     *
+     * @param token    the JWT token to validate
+     * @param username the expected username
+     * @return true if the token is valid, false otherwise
      */
     public boolean isTokenValid(String token, String username) {
         try {
+            // Check if token is revoked first
+            if (tokenBlacklistService.isRevoked(token)) {
+                log.debug("Token is revoked for user: {}", username);
+                return false;
+            }
+
             final String extractedUsername = extractUsername(token);
-            return (extractedUsername.equals(username)) && !isTokenExpired(token);
+            return extractedUsername.equals(username) && !isTokenExpired(token);
         } catch (SecurityException e) {
             return false;
         }

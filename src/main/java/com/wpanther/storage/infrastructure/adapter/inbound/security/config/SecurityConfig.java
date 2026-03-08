@@ -1,8 +1,9 @@
 package com.wpanther.storage.infrastructure.adapter.inbound.security.config;
 
 import com.wpanther.storage.infrastructure.adapter.inbound.security.JwtAccessDeniedHandler;
-import com.wpanther.storage.infrastructure.adapter.inbound.security.JwtAuthenticationEntryPoint;
 import com.wpanther.storage.infrastructure.adapter.inbound.security.JwtAuthenticationAdapter;
+import com.wpanther.storage.infrastructure.adapter.inbound.security.JwtAuthenticationEntryPoint;
+import com.wpanther.storage.infrastructure.adapter.inbound.security.RateLimitingFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -31,6 +32,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
  * - Method-level security with @PreAuthorize
  * - Public actuator endpoints for health checks
  * - Protected document storage endpoints
+ * - Rate limiting on authentication endpoints
  */
 @Configuration
 @EnableWebSecurity
@@ -42,6 +44,7 @@ public class SecurityConfig {
     private final JwtAuthenticationEntryPoint authenticationEntryPoint;
     private final JwtAccessDeniedHandler accessDeniedHandler;
     private final UserDetailsService userDetailsService;
+    private final RateLimitingFilter rateLimitingFilter;
 
     @Value("${app.security.cors.allowed-origins:http://localhost:3000,http://localhost:8080,http://localhost:8084}")
     private String corsAllowedOrigins;
@@ -67,6 +70,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/health").permitAll()
 
                         // Public authentication endpoints (for JWT token exchange)
+                        // Rate limiting is applied via RateLimitingFilter
                         .requestMatchers("/api/v1/auth/**").permitAll()
 
                         // Document upload requires DOCUMENT_WRITE permission
@@ -95,7 +99,8 @@ public class SecurityConfig {
 
                 // Add JWT filter before UsernamePasswordAuthenticationFilter
                 .authenticationProvider(authenticationProvider())
-                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
+                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(rateLimitingFilter, JwtAuthenticationAdapter.class);
 
         return http.build();
     }

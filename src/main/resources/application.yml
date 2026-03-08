@@ -122,6 +122,17 @@ app:
     # CORS allowed origins (comma-separated)
     cors:
       allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000,http://localhost:8080,http://localhost:8084}
+    # Rate limiting for authentication endpoints
+    rate-limit:
+      enabled: ${RATE_LIMIT_ENABLED:true}
+      max-attempts: ${RATE_LIMIT_MAX_ATTEMPTS:5}
+      window-seconds: ${RATE_LIMIT_WINDOW_SECONDS:60}
+      block-duration-seconds: ${RATE_LIMIT_BLOCK_DURATION_SECONDS:300}
+    # Token blacklist configuration
+    jwt:
+      blacklist:
+        size: ${JWT_BLACKLIST_SIZE:10000}
+        expire-hours: ${JWT_BLACKLIST_EXPIRE_HOURS:168}  # 7 days
 
 # Actuator endpoints
 management:

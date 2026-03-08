@@ -1,6 +1,7 @@
 package com.wpanther.storage.infrastructure.adapter.inbound.rest;
 
 import com.wpanther.storage.infrastructure.adapter.inbound.security.JwtService;
+import com.wpanther.storage.infrastructure.adapter.inbound.security.TokenBlacklistService;
 import com.wpanther.storage.infrastructure.adapter.inbound.security.exception.AuthenticationFailedException;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -22,6 +23,12 @@ import java.util.Map;
  * <p>
  * This endpoint is intended for inter-service authentication
  * where services exchange credentials for JWT tokens.
+ * <p>
+ * Features:
+ * - Login/logout with JWT tokens
+ * - Token refresh
+ * - Token validation
+ * - Token revocation/blacklist support
  */
 @RestController
 @RequestMapping("/api/v1/auth")
@@ -32,6 +39,7 @@ public class AuthenticationController {
     private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
     private final UserDetailsService userDetailsService;
+    private final TokenBlacklistService tokenBlacklistService;
 
     /**
      * Login endpoint - authenticate and generate JWT token.
@@ -158,6 +166,39 @@ public class AuthenticationController {
 
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                 .body(Map.of("valid", false, "error", "Invalid or expired token"));
+    }
+
+    /**
+     * Revoke JWT token (logout).
+     * <p>
+     * This endpoint adds the token to a blacklist, effectively invalidating it
+     * before its natural expiration time. Useful for:
+     * - Forced logout after password change
+     * - Compromised token handling
+     * - User session invalidation
+     *
+     * @param authHeader The Authorization header containing the Bearer token
+     * @return Success response
+     */
+    @PostMapping("/logout")
+    public ResponseEntity<Map<String, String>> logout(
+            @RequestHeader("Authorization") String authHeader) {
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            return ResponseEntity.badRequest()
+                    .body(Map.of("error", "Missing or invalid authorization header"));
+        }
+
+        String token = authHeader.substring(7);
+
+        try {
+            tokenBlacklistService.revokeToken(token);
+            log.info("Token revoked successfully for user: {}", jwtService.extractUsername(token));
+            return ResponseEntity.ok(Map.of("message", "Token revoked successfully"));
+        } catch (Exception e) {
+            log.error("Failed to revoke token", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Failed to revoke token"));
+        }
     }
 
     // DTOs

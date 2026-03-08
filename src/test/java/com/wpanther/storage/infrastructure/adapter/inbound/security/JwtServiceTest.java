@@ -20,16 +20,17 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 class JwtServiceTest {
 
     private JwtService jwtService;
+    private TokenBlacklistService tokenBlacklistService;
 
     private static final String TEST_USERNAME = "service-test";
     private static final String TEST_SECRET = "404E635266556A586E3272354E39423F4428472B4B6250645367566B59703373367639792F423F4528482B4D6251655468576D5A7134743777397A24432646294A404E635266556A586E3272357538782F413F4428472B4B6250645367566B59703373367639792F425A452D4A614E645267556B58703273357538782F413F4428472B4B6250645367533879";
 
     @BeforeEach
     void setUp() {
-        jwtService = new JwtService();
-        ReflectionTestUtils.setField(jwtService, "secretKey", TEST_SECRET);
-        ReflectionTestUtils.setField(jwtService, "jwtExpiration", 86400000L);
-        ReflectionTestUtils.setField(jwtService, "refreshExpiration", 604800000L);
+        tokenBlacklistService = org.mockito.Mockito.mock(TokenBlacklistService.class);
+        org.mockito.Mockito.when(tokenBlacklistService.isRevoked(org.mockito.ArgumentMatchers.anyString())).thenReturn(false);
+
+        jwtService = new JwtService(TEST_SECRET, 86400000L, 604800000L, tokenBlacklistService);
     }
 
     @Nested
