@@ -5,6 +5,7 @@ import com.wpanther.saga.domain.outbox.OutboxEventRepository;
 import com.wpanther.saga.domain.outbox.OutboxStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.annotation.Primary;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
 
@@ -18,6 +19,7 @@ import java.util.UUID;
  * Bridges between domain OutboxEvent and JPA OutboxEventEntity.
  */
 @Component
+@Primary
 public class JpaOutboxEventRepository implements OutboxEventRepository {
 
     private static final Logger log = LoggerFactory.getLogger(JpaOutboxEventRepository.class);

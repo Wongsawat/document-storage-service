@@ -44,7 +44,7 @@ public class ResilienceConfig {
     private int pdfDownloadFailureRateThreshold;
 
     @Value("${app.resilience.pdf-download.wait-duration-in-open-state:30s}")
-    private String pdfDownloadWaitDuration;
+    private Duration pdfDownloadWaitDuration;
 
     @Value("${app.resilience.pdf-download.permitted-number-of-calls-in-half-open-state:10}")
     private int pdfDownloadHalfOpenCalls;
@@ -53,10 +53,10 @@ public class ResilienceConfig {
     private int maxRetryAttempts;
 
     @Value("${app.resilience.retry.wait-duration:500ms}")
-    private String retryWaitDuration;
+    private Duration retryWaitDuration;
 
     @Value("${app.resilience.timeout.duration:30s}")
-    private String timeoutDuration;
+    private Duration timeoutDuration;
 
     /**
      * Circuit breaker registry for PDF download service.
@@ -75,7 +75,7 @@ public class ResilienceConfig {
         CircuitBreakerConfig config = CircuitBreakerConfig.custom()
                 .slidingWindowSize(pdfDownloadSlidingWindowSize)
                 .failureRateThreshold(pdfDownloadFailureRateThreshold)
-                .waitDurationInOpenState(Duration.parse("PT" + pdfDownloadWaitDuration))
+                .waitDurationInOpenState(pdfDownloadWaitDuration)
                 .permittedNumberOfCallsInHalfOpenState(pdfDownloadHalfOpenCalls)
                 .recordExceptions(IOException.class, InterruptedException.class)
                 .ignoreExceptions(IllegalArgumentException.class)
@@ -104,7 +104,7 @@ public class ResilienceConfig {
     public RetryRegistry retryRegistry() {
         RetryConfig config = RetryConfig.custom()
                 .maxAttempts(maxRetryAttempts)
-                .waitDuration(Duration.parse("PT" + retryWaitDuration))
+                .waitDuration(retryWaitDuration)
                 .retryExceptions(IOException.class, InterruptedException.class)
                 .ignoreExceptions(IllegalArgumentException.class)
                 .build();
@@ -130,7 +130,7 @@ public class ResilienceConfig {
     @Bean
     public TimeLimiterRegistry timeLimiterRegistry() {
         TimeLimiterConfig config = TimeLimiterConfig.custom()
-                .timeoutDuration(Duration.parse("PT" + timeoutDuration))
+                .timeoutDuration(timeoutDuration)
                 .build();
 
         TimeLimiterRegistry registry = TimeLimiterRegistry.of(config);

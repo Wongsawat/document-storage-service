@@ -142,7 +142,7 @@ public class OutboxReconciliationService {
      * @return true if outbox event exists, false otherwise
      */
     private boolean hasOutboxEvent(String documentId) {
-        return outboxRepository.existsByAggregateIdAndType(
+        return outboxRepository.existsByAggregateIdAndEventType(
                 documentId,
                 "DocumentStoredEvent"
         );

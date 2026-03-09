@@ -16,15 +16,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
-import org.testcontainers.containers.KafkaContainer;
-import org.testcontainers.containers.MongoDBContainer;
-import org.testcontainers.containers.PostgreSQLContainer;
-import org.testcontainers.containers.wait.strategy.Wait;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.utility.DockerImageName;
 
-import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
@@ -43,42 +35,23 @@ import static org.assertj.core.api.Assertions.assertThat;
  * </ol>
  * </p>
  * <p>
- * <b>Note:</b> Full Debezium CDC testing with Kafka requires additional Debezium
- * container setup. These tests verify the outbox pattern foundation works correctly
- * with real databases, which enables CDC in production.
+ * <b>Note:</b> These tests use external containers started via docker-compose.
+ * Start containers: cd ../../ && ./scripts/test-containers-start.sh
+ * </p>
+ * <p>
+ * Container ports:
+ * - PostgreSQL: 5433 (external), 5432 (testcontainers)
+ * - MongoDB: 27018 (external), 27017 (testcontainers)
+ * - Kafka: 9093 (external), 9092 (testcontainers)
  * </p>
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
-@Testcontainers
 @Tag("integration")
 @DisplayName("Saga Flow Integration Tests (CDC Foundation)")
 @ActiveProfiles("test")
 public class SagaFlowIntegrationTest {
 
     private static final Logger log = LoggerFactory.getLogger(SagaFlowIntegrationTest.class);
-
-    @Container
-    static KafkaContainer kafka = new KafkaContainer(
-            DockerImageName.parse("confluentinc/cp-kafka:7.5.0"))
-            .withEmbeddedZookeeper()
-            .withExposedPorts(9093)
-            .withStartupTimeout(Duration.ofMinutes(2));
-
-    @Container
-    static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>(
-            DockerImageName.parse("postgres:16-alpine"))
-            .withDatabaseName("documentstorage_test")
-            .withUsername("postgres")
-            .withPassword("postgres")
-            .withExposedPorts(5432)
-            .withStartupTimeout(Duration.ofMinutes(1))
-            .waitingFor(Wait.forLogMessage("database system is ready to accept connections", 2).withTimes(1));
-
-    @Container
-    static MongoDBContainer mongoDB = new MongoDBContainer(
-            DockerImageName.parse("mongo:7"))
-            .withExposedPorts(27017)
-            .withStartupTimeout(Duration.ofMinutes(1));
 
     @Autowired
     private DocumentRepositoryPort documentRepository;
@@ -187,7 +160,7 @@ public class SagaFlowIntegrationTest {
 
         // When & Then
         assertThat(outboxRepository.existsByAggregateId(documentId)).isTrue();
-        assertThat(outboxRepository.existsByAggregateIdAndType(
+        assertThat(outboxRepository.existsByAggregateIdAndEventType(
                 documentId, "DocumentStoredEvent")).isTrue();
 
         List<OutboxEventEntity> found = outboxRepository

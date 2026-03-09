@@ -2,6 +2,10 @@ spring:
   application:
     name: document-storage-service
 
+  # Allow bean definition overriding for security config
+  main:
+    allow-bean-definition-overriding: true
+
   # PostgreSQL configuration for tests
   datasource:
     url: ${POSTGRES_JDBC_URL:jdbc:postgresql://localhost:5433/documentstorage_test}
@@ -22,12 +26,12 @@ spring:
     mongodb:
       uri: ${MONGO_CONNECTION_STRING:mongodb://localhost:27018/document_storage_test}
 
-  # Disable embedded MongoDB for external container tests
+  # Set embedded MongoDB version for when it gets enabled
   de:
     flapdoodle:
-      embed:
-        mongodb:
-          enabled: false
+      mongodb:
+        embedded:
+          version: 7.0.5
 
   # Flyway disabled for tests (schema created by Hibernate)
   flyway:
@@ -48,9 +52,29 @@ app:
       base-path: ${java.io.tmpdir}/test-documents
       base-url: http://localhost:8084/api/v1/documents
 
+  # Resilience configuration for tests
+  resilience:
+    pdf-download:
+      sliding-window-size: 100
+      failure-rate-threshold: 50
+      wait-duration-in-open-state: 30s
+      permitted-number-of-calls-in-half-open-state: 10
+    retry:
+      max-attempts: 3
+      wait-duration: 500ms
+    timeout:
+      duration: 30s
+
   # Disable reconciliation in tests
   reconciliation:
     enabled: false
+
+  # Security configuration
+  security:
+    jwt:
+      secret: dGVzdC1zZWNyZXQta2V5LWZvci10ZXN0aW5nLXB1cnBvc2VzLW9ubHktMTIzNDU2Nzg=
+      expiration: 86400000
+      refresh-expiration: 604800000
 
 # Logging for tests
 logging:
