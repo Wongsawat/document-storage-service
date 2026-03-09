@@ -6,7 +6,9 @@ import com.wpanther.storage.domain.model.StoredDocument;
 import com.wpanther.storage.domain.port.outbound.DocumentRepositoryPort;
 import com.wpanther.storage.infrastructure.adapter.outbound.persistence.outbox.OutboxEventEntity;
 import com.wpanther.storage.infrastructure.adapter.outbound.persistence.outbox.SpringDataOutboxRepository;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
@@ -65,7 +67,17 @@ import static org.awaitility.Awaitility.await;
 public class ChaosEngineeringTest {
 
     private static final Logger log = LoggerFactory.getLogger(ChaosEngineeringTest.class);
-    private static final Network NETWORK = Network.newNetwork();
+
+    // Chaos test configuration constants
+    private static final int CIRCUIT_BREAKER_TEST_ITERATIONS = 10;
+    private static final int RESOURCE_CONSTRAINT_TEST_DOCUMENTS = 20;
+    private static final int CONCURRENT_OPERATIONS_COUNT = 15;
+    private static final int MEMORY_PRESSURE_MB = 10;
+    private static final int SLOW_QUERY_TEST_DOCUMENTS = 5;
+    private static final int SLOW_QUERY_DELAY_MS = 100;
+    private static final int RETRY_TEST_MAX_ATTEMPTS = 5;
+
+    private static Network NETWORK;
 
     @Container
     static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>(
@@ -95,11 +107,33 @@ public class ChaosEngineeringTest {
     @Autowired
     private SpringDataOutboxRepository outboxRepository;
 
+    @BeforeAll
+    static void setUpNetwork() {
+        NETWORK = Network.newNetwork();
+    }
+
+    @AfterAll
+    static void tearDownNetwork() {
+        if (NETWORK != null) {
+            NETWORK.close();
+        }
+    }
+
     @BeforeEach
     void setUp() {
         log.info("==============================================");
         log.info("Starting Chaos Engineering Test");
         log.info("==============================================");
+
+        // Clean up outbox events to ensure test isolation
+        // Note: We intentionally don't clean up documents in MongoDB for chaos testing.
+        // Having leftover documents simulates real-world conditions and tests the system's
+        // ability to handle existing data during failure scenarios.
+        try {
+            outboxRepository.deleteAll();
+        } catch (Exception e) {
+            log.debug("Error during outbox cleanup: {}", e.getMessage());
+        }
     }
 
     @AfterEach
@@ -107,6 +141,9 @@ public class ChaosEngineeringTest {
         log.info("==============================================");
         log.info("Chaos Engineering Test Completed");
         log.info("==============================================");
+
+        // Suggest garbage collection to help detect resource leaks
+        System.gc();
     }
 
     // ==================== RESILIENCE TESTS ====================
@@ -203,7 +240,7 @@ public class ChaosEngineeringTest {
         int failureCount = 0;
         int successCount = 0;
 
-        for (int i = 0; i < 10; i++) {
+        for (int i = 0; i < CIRCUIT_BREAKER_TEST_ITERATIONS; i++) {
             try {
                 // Attempt operation that may fail
                 StoredDocument doc = StoredDocument.builder()
@@ -235,7 +272,7 @@ public class ChaosEngineeringTest {
 
         // Then - System should handle failures gracefully
         log.info("Results - Failures: {}, Successes: {}", failureCount, successCount);
-        assertThat(successCount + failureCount).isEqualTo(10);
+        assertThat(successCount + failureCount).isEqualTo(CIRCUIT_BREAKER_TEST_ITERATIONS);
 
         // Verify at least some operations succeeded
         assertThat(successCount).isGreaterThan(0);
@@ -248,7 +285,7 @@ public class ChaosEngineeringTest {
         log.info("CHAOS TEST: Resource Constrained Environment");
 
         // Given - Create multiple documents rapidly
-        int documentCount = 20;
+        int documentCount = RESOURCE_CONSTRAINT_TEST_DOCUMENTS;
         log.info("Step 1: Creating {} documents under resource constraints", documentCount);
 
         int successfulSaves = 0;
@@ -295,7 +332,7 @@ public class ChaosEngineeringTest {
         log.info("CHAOS TEST: Connection Pool Exhaustion");
 
         // Given - Create multiple concurrent operations
-        int concurrentOps = 15;
+        int concurrentOps = CONCURRENT_OPERATIONS_COUNT;
         log.info("Step 1: Executing {} concurrent operations", concurrentOps);
 
         java.util.List<StoredDocument> documents = new java.util.ArrayList<>();
@@ -360,7 +397,7 @@ public class ChaosEngineeringTest {
         int attempts = 0;
         boolean success = false;
 
-        for (int i = 0; i < 5; i++) {
+        for (int i = 0; i < RETRY_TEST_MAX_ATTEMPTS; i++) {
             attempts++;
             try {
                 StoredDocument document = StoredDocument.builder()
@@ -406,8 +443,8 @@ public class ChaosEngineeringTest {
         java.util.List<String> documentIds = new java.util.ArrayList<>();
         long startTime = System.currentTimeMillis();
 
-        for (int i = 0; i < 5; i++) {
-            simulateSlowDatabase(100); // 100ms delay
+        for (int i = 0; i < SLOW_QUERY_TEST_DOCUMENTS; i++) {
+            simulateSlowDatabase(SLOW_QUERY_DELAY_MS); // 100ms delay
 
             String documentId = UUID.randomUUID().toString();
             StoredDocument document = StoredDocument.builder()
@@ -427,7 +464,7 @@ public class ChaosEngineeringTest {
         long duration = System.currentTimeMillis() - startTime;
 
         // Then - All operations should complete
-        assertThat(documentIds).hasSize(5);
+        assertThat(documentIds).hasSize(SLOW_QUERY_TEST_DOCUMENTS);
         log.info("All {} documents saved in {}ms despite slow queries", documentIds.size(), duration);
         log.info("✓ System handled slow database queries");
     }
@@ -506,7 +543,7 @@ public class ChaosEngineeringTest {
         log.info("  [CHAOS] Simulating resource pressure");
 
         // Allocate some memory
-        byte[] memoryAllocation = new byte[10 * 1024 * 1024]; // 10MB
+        byte[] memoryAllocation = new byte[MEMORY_PRESSURE_MB * 1024 * 1024];
 
         // Simulate CPU pressure
         long startTime = System.currentTimeMillis();
