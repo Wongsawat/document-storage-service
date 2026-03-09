@@ -15,7 +15,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
  */
 @SpringBootApplication
 @EnableDiscoveryClient
-@EnableMongoRepositories(basePackages = "com.wpanther.storage.infrastructure.persistence")
+@EnableMongoRepositories(basePackages = "com.wpanther.storage.infrastructure.adapter.outbound.persistence")
 @EnableScheduling
 public class DocumentStorageServiceApplication {
 

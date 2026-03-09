@@ -5,8 +5,8 @@ spring:
   # PostgreSQL configuration for tests
   datasource:
     url: ${POSTGRES_JDBC_URL:jdbc:postgresql://localhost:5433/documentstorage_test}
-    username: test
-    password: test
+    username: postgres
+    password: postgres
     driver-class-name: org.postgresql.Driver
 
   jpa:
@@ -21,6 +21,13 @@ spring:
   data:
     mongodb:
       uri: ${MONGO_CONNECTION_STRING:mongodb://localhost:27018/document_storage_test}
+
+  # Disable embedded MongoDB for external container tests
+  de:
+    flapdoodle:
+      embed:
+        mongodb:
+          enabled: false
 
   # Flyway disabled for tests (schema created by Hibernate)
   flyway:
