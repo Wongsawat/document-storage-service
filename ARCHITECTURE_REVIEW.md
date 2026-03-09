@@ -605,7 +605,7 @@ class SagaIntegrationTest {
 
 8. **Consider MongoDB → PostgreSQL migration** for single database transactions
 9. ✅ **Implement full end-to-end saga integration tests** with Debezium CDC
-10. **Add chaos engineering tests** (Podman chaos)
+10. ✅ **Add chaos engineering tests** (Podman chaos)
 
 ---
 
@@ -624,6 +624,7 @@ The document-storage-service is a **well-designed, production-ready microservice
 - ✅ Circuit breakers and resilience patterns
 - ✅ Custom business metrics for Prometheus
 - ✅ Full Debezium CDC integration tests
+- ✅ Chaos engineering tests for resilience validation
 
 **Key improvement areas:**
 1. ✅ MongoDB + PostgreSQL dual-write consistency (HIGH) - Fixed with outbox reconciliation
