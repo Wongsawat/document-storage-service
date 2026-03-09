@@ -39,7 +39,7 @@ spring:
 
 # Kafka configuration for tests
 kafka:
-  bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+  bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9093}
   consumer:
     auto-offset-reset: earliest
     enable-auto-commit: false
