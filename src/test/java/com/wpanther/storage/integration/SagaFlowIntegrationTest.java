@@ -59,7 +59,7 @@ public class SagaFlowIntegrationTest {
 
     @Container
     static KafkaContainer kafka = new KafkaContainer(
-            DockerImageName.parse("confluentinc/cp-kafka:latest"))
+            DockerImageName.parse("confluentinc/cp-kafka:7.5.0"))
             .withEmbeddedZookeeper()
             .withExposedPorts(9093)
             .withStartupTimeout(Duration.ofMinutes(2));
@@ -68,8 +68,8 @@ public class SagaFlowIntegrationTest {
     static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>(
             DockerImageName.parse("postgres:16-alpine"))
             .withDatabaseName("documentstorage_test")
-            .withUsername("test")
-            .withPassword("test")
+            .withUsername("postgres")
+            .withPassword("postgres")
             .withExposedPorts(5432)
             .withStartupTimeout(Duration.ofMinutes(1))
             .waitingFor(Wait.forLogMessage("database system is ready to accept connections", 2).withTimes(1));
