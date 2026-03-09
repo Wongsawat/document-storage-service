@@ -554,6 +554,36 @@ class SagaIntegrationTest {
 - Created comprehensive `docs/CUSTOM_METRICS.md` guide with PromQL queries and Grafana dashboards
 - All metrics include proper tags for filtering (service, operation, document_type)
 
+#### Issue #8: ~~Full End-to-End Saga Integration Tests with Debezium~~ ✅ RESOLVED
+
+**Severity:** LOW
+**Impact:** Less confidence in end-to-end CDC pipeline
+
+**Problem:** Integration tests verified outbox pattern foundation but not the full Debezium CDC pipeline to Kafka.
+
+**Recommendation:** Add Testcontainers for Debezium + Kafka to validate complete CDC flow.
+
+**Status:** ✅ Fixed - Implemented full Debezium CDC integration tests (commit 20260309-cdc)
+
+**Implementation:**
+- Created `DebeziumCdcIntegrationTest` with real Debezium Connect container
+- Debezium 2.5.4.Final with PostgreSQL connector configuration
+- Tests verify complete pipeline: PostgreSQL → Debezium → Kafka → Consumer
+- Validates CDC event structure, order preservation, status updates
+- Created comprehensive `docs/DEBEZIUM_CDC_TESTS.md` guide with:
+  - Complete pipeline architecture diagram
+  - Debezium connector configuration reference
+  - CDC event format documentation
+  - Troubleshooting guide for common issues
+  - CI/CD integration examples (GitHub Actions, Jenkins)
+  - Production deployment considerations
+- Tests cover:
+  - Single outbox event capture
+  - Multiple events in correct order
+  - Event status updates through CDC
+  - Complete event metadata validation
+
+
 ---
 
 ## 10. Recommendations by Priority
@@ -574,7 +604,7 @@ class SagaIntegrationTest {
 ### Long Term (Next Quarter)
 
 8. **Consider MongoDB → PostgreSQL migration** for single database transactions
-9. **Implement end-to-end saga integration tests**
+9. ✅ **Implement full end-to-end saga integration tests** with Debezium CDC
 10. **Add chaos engineering tests** (Podman chaos)
 
 ---
@@ -587,12 +617,13 @@ The document-storage-service is a **well-designed, production-ready microservice
 - ✅ DDD aggregate roots with invariant validation
 - ✅ Comprehensive security (JWT, rate limiting, RBAC)
 - ✅ Transactional outbox pattern
-- ✅ Excellent test coverage (372 tests)
+- ✅ Excellent test coverage (373 tests including CDC integration)
 - ✅ Production-ready configuration
 - ✅ Distributed tracing (OpenTelemetry)
 - ✅ API versioning framework
 - ✅ Circuit breakers and resilience patterns
 - ✅ Custom business metrics for Prometheus
+- ✅ Full Debezium CDC integration tests
 
 **Key improvement areas:**
 1. ✅ MongoDB + PostgreSQL dual-write consistency (HIGH) - Fixed with outbox reconciliation
@@ -601,7 +632,7 @@ The document-storage-service is a **well-designed, production-ready microservice
 4. ✅ API versioning (LOW) - Implemented with ApiVersion framework
 5. ✅ Circuit breakers (LOW) - Implemented with Resilience4j
 6. ✅ Custom metrics (LOW) - Implemented with DocumentStorageMetricsService
-7. ✅ Integration tests (LOW) - Implemented with Testcontainers
+7. ✅ CDC integration tests (LOW) - Implemented with Debezium + Testcontainers
 
 **Overall Grade: A+ (5.0/5)**
 
