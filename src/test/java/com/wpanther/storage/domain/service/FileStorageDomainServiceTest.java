@@ -3,6 +3,7 @@ package com.wpanther.storage.domain.service;
 import com.wpanther.storage.domain.model.*;
 import com.wpanther.storage.domain.port.outbound.*;
 import com.wpanther.storage.domain.exception.*;
+import com.wpanther.storage.infrastructure.config.DocumentStorageMetricsService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -31,6 +32,9 @@ class FileStorageDomainServiceTest {
 
     @Mock
     private DocumentRepositoryPort documentRepository;
+
+    @Mock
+    private DocumentStorageMetricsService metrics;
 
     @InjectMocks
     private FileStorageDomainService service;

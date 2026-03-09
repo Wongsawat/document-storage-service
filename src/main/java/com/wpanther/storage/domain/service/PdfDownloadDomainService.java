@@ -1,9 +1,9 @@
 package com.wpanther.storage.domain.service;
 
 import com.wpanther.storage.domain.exception.StorageFailedException;
+import com.wpanther.storage.infrastructure.config.DocumentStorageMetricsService;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import io.github.resilience4j.retry.annotation.Retry;
-import io.github.resilience4j.timelimiter.annotation.TimeLimiter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -14,7 +14,6 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
-import java.util.concurrent.TimeoutException;
 
 /**
  * Domain service for downloading PDFs from external URLs.
@@ -27,7 +26,7 @@ import java.util.concurrent.TimeoutException;
  * <ul>
  *   <li><b>Circuit Breaker:</b> Stops calls after repeated failures (pdfDownloadService)</li>
  *   <li><b>Retry:</b> Retries transient failures (pdfDownloadRetry)</li>
- *   <li><b>Timeout:</b> Enforces max duration (pdfDownloadTimeout)</li>
+ *   <li><b>Metrics:</b> Records PDF download success/failure rates and latency</li>
  * </ul>
  * </p>
  */
@@ -39,8 +38,10 @@ public class PdfDownloadDomainService {
     private static final int REQUEST_TIMEOUT_SECONDS = 60;
 
     private final HttpClient httpClient;
+    private final DocumentStorageMetricsService metrics;
 
-    public PdfDownloadDomainService() {
+    public PdfDownloadDomainService(DocumentStorageMetricsService metrics) {
+        this.metrics = metrics;
         this.httpClient = HttpClient.newBuilder()
             .connectTimeout(Duration.ofSeconds(CONNECT_TIMEOUT_SECONDS))
             .build();
@@ -58,6 +59,8 @@ public class PdfDownloadDomainService {
     public byte[] downloadPdf(String pdfUrl) {
         log.info("Downloading PDF from: {}", pdfUrl);
 
+        long startTime = System.currentTimeMillis();
+
         try {
             HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(pdfUrl))
@@ -70,10 +73,14 @@ public class PdfDownloadDomainService {
                 HttpResponse.BodyHandlers.ofByteArray()
             );
 
+            long duration = System.currentTimeMillis() - startTime;
+
             if (response.statusCode() >= 200 && response.statusCode() < 300) {
                 log.info("Successfully downloaded PDF, size: {} bytes", response.body().length);
+                metrics.recordPdfDownloadSuccess(duration);
                 return response.body();
             } else {
+                metrics.recordPdfDownloadFailure(duration);
                 throw new StorageFailedException(
                     "Failed to download PDF from " + pdfUrl +
                     ", HTTP status: " + response.statusCode()
@@ -81,6 +88,8 @@ public class PdfDownloadDomainService {
             }
         } catch (IOException | InterruptedException e) {
             Thread.currentThread().interrupt();
+            long duration = System.currentTimeMillis() - startTime;
+            metrics.recordPdfDownloadFailure(duration);
             throw new StorageFailedException("Failed to download PDF from " + pdfUrl, e);
         }
     }

@@ -5,6 +5,8 @@ import com.wpanther.storage.domain.port.outbound.*;
 import com.wpanther.storage.domain.exception.*;
 import com.wpanther.storage.domain.port.inbound.DocumentStorageUseCase;
 import com.wpanther.storage.domain.util.ContentTypeUtil;
+import com.wpanther.storage.infrastructure.config.DocumentStorageMetricsService;
+import io.micrometer.core.instrument.Timer;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,16 +18,22 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+/**
+ * Domain service for document storage operations with metrics.
+ */
 @Service
 public class FileStorageDomainService implements DocumentStorageUseCase {
 
     private final StorageProviderPort storageProvider;
     private final DocumentRepositoryPort documentRepository;
+    private final DocumentStorageMetricsService metrics;
 
     public FileStorageDomainService(StorageProviderPort storageProvider,
-                                     DocumentRepositoryPort documentRepository) {
+                                     DocumentRepositoryPort documentRepository,
+                                     DocumentStorageMetricsService metrics) {
         this.storageProvider = storageProvider;
         this.documentRepository = documentRepository;
+        this.metrics = metrics;
     }
 
     @Override
@@ -43,32 +51,49 @@ public class FileStorageDomainService implements DocumentStorageUseCase {
             throw new InvalidDocumentException("Document content cannot be empty");
         }
 
-        String documentId = UUID.randomUUID().toString();
-        InputStream inputStream = new ByteArrayInputStream(content);
-        StorageResult result = storageProvider.store(documentId, inputStream, filename, content.length);
-        String checksum = DigestUtils.sha256Hex(content);
+        Timer.Sample timer = metrics.timeStorageOperation();
 
-        StoredDocument document = StoredDocument.builder()
-            .id(documentId)
-            .invoiceId(invoiceId)
-            .invoiceNumber(invoiceNumber)
-            .documentType(type)
-            .fileName(filename)
-            .contentType(contentType != null ? contentType : ContentTypeUtil.determineContentType(filename))
-            .storagePath(result.location())
-            .storageUrl(result.location())
-            .fileSize(content.length)
-            .checksum(checksum)
-            .createdAt(LocalDateTime.now())
-            .build();
+        try {
+            String documentId = UUID.randomUUID().toString();
+            InputStream inputStream = new ByteArrayInputStream(content);
+            StorageResult result = storageProvider.store(documentId, inputStream, filename, content.length);
+            String checksum = DigestUtils.sha256Hex(content);
 
-        return documentRepository.save(document);
+            StoredDocument document = StoredDocument.builder()
+                .id(documentId)
+                .invoiceId(invoiceId)
+                .invoiceNumber(invoiceNumber)
+                .documentType(type)
+                .fileName(filename)
+                .contentType(contentType != null ? contentType : ContentTypeUtil.determineContentType(filename))
+                .storagePath(result.location())
+                .storageUrl(result.location())
+                .fileSize(content.length)
+                .checksum(checksum)
+                .createdAt(LocalDateTime.now())
+                .build();
+
+            StoredDocument savedDocument = documentRepository.save(document);
+
+            // Record metrics
+            metrics.recordDocumentStored(type);
+            metrics.stopStorageOperation(timer);
+
+            return savedDocument;
+        } catch (Exception e) {
+            metrics.stopStorageOperation(timer);
+            throw e;
+        }
     }
 
     @Override
     @Transactional(readOnly = true)
     public Optional<StoredDocument> getDocument(String documentId) {
-        return documentRepository.findById(documentId);
+        Optional<StoredDocument> doc = documentRepository.findById(documentId);
+        if (doc.isPresent()) {
+            metrics.recordDocumentRetrieved();
+        }
+        return doc;
     }
 
     @Override
@@ -84,6 +109,7 @@ public class FileStorageDomainService implements DocumentStorageUseCase {
             .orElseThrow(() -> new DocumentNotFoundException("Document not found: " + documentId));
         storageProvider.delete(doc.getStoragePath());
         documentRepository.deleteById(documentId);
+        metrics.recordDocumentDeleted();
     }
 
     @Override
@@ -107,6 +133,7 @@ public class FileStorageDomainService implements DocumentStorageUseCase {
 
         try {
             InputStream inputStream = storageProvider.retrieve(doc.getStoragePath());
+            metrics.recordDocumentRetrieved();
             return inputStream.readAllBytes();
         } catch (Exception e) {
             throw new StorageFailedException("Failed to retrieve document content: " + documentId, e);

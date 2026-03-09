@@ -5,6 +5,7 @@ import com.wpanther.storage.domain.port.outbound.DocumentRepositoryPort;
 import com.wpanther.storage.domain.model.StoredDocument;
 import com.wpanther.storage.infrastructure.adapter.outbound.persistence.outbox.OutboxEventEntity;
 import com.wpanther.storage.infrastructure.adapter.outbound.persistence.outbox.SpringDataOutboxRepository;
+import com.wpanther.storage.infrastructure.config.DocumentStorageMetricsService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -37,6 +38,7 @@ public class OutboxReconciliationService {
 
     private final DocumentRepositoryPort documentRepositoryPort;
     private final SpringDataOutboxRepository outboxRepository;
+    private final DocumentStorageMetricsService metrics;
 
     @Value("${app.reconciliation.batch-size:100}")
     private int batchSize;
@@ -82,6 +84,9 @@ public class OutboxReconciliationService {
                     orphanedCount++;
                 }
             }
+
+            // Record reconciliation metrics
+            metrics.recordReconciliationRun(orphanedCount);
 
             log.info("Reconciliation complete: processed {} documents, {} orphaned",
                     recentDocuments.size(), orphanedCount);

@@ -1,6 +1,10 @@
 package com.wpanther.storage.domain.service;
 
 import com.wpanther.storage.domain.exception.StorageFailedException;
+import com.wpanther.storage.infrastructure.config.DocumentStorageMetricsService;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -10,7 +14,20 @@ import static org.junit.jupiter.api.Assertions.*;
 @DisplayName("PdfDownloadDomainService Tests")
 class PdfDownloadDomainServiceTest {
 
-    private final PdfDownloadDomainService service = new PdfDownloadDomainService();
+    private MeterRegistry meterRegistry;
+
+    @AfterEach
+    void tearDown() {
+        if (meterRegistry != null) {
+            meterRegistry.close();
+        }
+    }
+
+    private PdfDownloadDomainService createService() {
+        meterRegistry = new SimpleMeterRegistry();
+        DocumentStorageMetricsService metrics = new DocumentStorageMetricsService(meterRegistry);
+        return new PdfDownloadDomainService(metrics);
+    }
 
     @Nested
     @DisplayName("Constructor")
@@ -19,6 +36,7 @@ class PdfDownloadDomainServiceTest {
         @Test
         @DisplayName("Should create service successfully")
         void shouldCreateServiceSuccessfully() {
+            PdfDownloadDomainService service = createService();
             assertNotNull(service);
         }
     }
@@ -30,6 +48,7 @@ class PdfDownloadDomainServiceTest {
         @Test
         @DisplayName("Should throw StorageFailedException for valid URL that doesn't exist")
         void shouldThrowExceptionForNonExistentUrl() {
+            PdfDownloadDomainService service = createService();
             String nonExistentUrl = "http://localhost:9999/non-existent.pdf";
 
             StorageFailedException ex = assertThrows(StorageFailedException.class,
@@ -42,6 +61,7 @@ class PdfDownloadDomainServiceTest {
         @Test
         @DisplayName("Should include URL in exception message")
         void shouldIncludeUrlInExceptionMessage() {
+            PdfDownloadDomainService service = createService();
             String url = "http://localhost:9999/test.pdf";
 
             StorageFailedException ex = assertThrows(StorageFailedException.class,
@@ -53,6 +73,7 @@ class PdfDownloadDomainServiceTest {
         @Test
         @DisplayName("Should handle timeout errors")
         void shouldHandleTimeoutErrors() {
+            PdfDownloadDomainService service = createService();
             // Using a URL that will likely timeout
             String timeoutUrl = "http://192.0.2.1:9999/test.pdf"; // TEST-NET-1 IP, will timeout
 
@@ -70,6 +91,7 @@ class PdfDownloadDomainServiceTest {
         @Test
         @DisplayName("Should throw StorageFailedException for valid URL that doesn't exist")
         void shouldThrowExceptionForNonExistentUrl() {
+            PdfDownloadDomainService service = createService();
             String nonExistentUrl = "http://localhost:9999/non-existent";
 
             StorageFailedException ex = assertThrows(StorageFailedException.class,
@@ -81,6 +103,7 @@ class PdfDownloadDomainServiceTest {
         @Test
         @DisplayName("Should include URL in exception message")
         void shouldIncludeUrlInExceptionMessage() {
+            PdfDownloadDomainService service = createService();
             String url = "http://localhost:9999/test";
 
             StorageFailedException ex = assertThrows(StorageFailedException.class,
@@ -92,6 +115,7 @@ class PdfDownloadDomainServiceTest {
         @Test
         @DisplayName("Should handle timeout errors")
         void shouldHandleTimeoutErrors() {
+            PdfDownloadDomainService service = createService();
             // Using a URL that will likely timeout
             String timeoutUrl = "http://192.0.2.1:9999/test"; // TEST-NET-1 IP, will timeout
 
