@@ -380,6 +380,91 @@ src/main/resources/
     └── V1__create_outbox_events_table.sql
 ```
 
+## Testing
+
+### Running Unit Tests
+
+```bash
+# Run unit tests (no external dependencies required)
+mvn test
+
+# Run specific test class
+mvn test -Dtest=SagaFlowIntegrationTest
+
+# Run specific test method
+mvn test -Dtest=SagaFlowIntegrationTest#shouldCreateDocumentAndOutboxEvent
+```
+
+### Running Integration Tests with External Containers
+
+Integration tests require external services (PostgreSQL, MongoDB, Kafka). Follow these steps:
+
+#### 1. Start External Containers
+
+```bash
+cd ../../docker
+docker compose -f docker-compose.test.yml up -d
+```
+
+This starts:
+- PostgreSQL on port 5433 (for outbox events)
+- MongoDB on port 27018 (for document metadata)
+- Kafka on port 9093
+- Debezium on port 8083
+- eIDAS Remote Signing on port 9000
+
+Wait for all containers to be healthy:
+```bash
+docker ps --filter "name=test-"
+```
+
+#### 2. Run Integration Tests
+
+```bash
+# Run all integration tests
+mvn test -Dtest="SagaFlowIntegrationTest,ExternalContainerSmokeTest"
+
+# Run only Saga Flow tests
+mvn test -Dtest=SagaFlowIntegrationTest
+
+# Run only Smoke tests
+mvn test -Dtest=ExternalContainerSmokeTest
+```
+
+#### 3. Stop Containers
+
+```bash
+cd ../../docker
+docker compose -f docker-compose.test.yml down
+```
+
+### Test Configuration
+
+Test configuration is in `src/test/resources/application-test.yml`:
+
+| Property | Default | Description |
+|----------|---------|-------------|
+| `spring.datasource.url` | `jdbc:postgresql://localhost:5433/documentstorage_test` | PostgreSQL JDBC URL |
+| `spring.data.mongodb.uri` | `mongodb://localhost:27018/document_storage_test` | MongoDB connection string |
+| `kafka.bootstrap-servers` | `localhost:9093` | Kafka broker address |
+| `app.storage.local.base-path` | `${java.io.tmpdir}/test-documents` | Local storage path for tests |
+| `app.security.jwt.secret` | (test secret) | JWT secret for tests |
+
+### Troubleshooting
+
+**Tests fail with "Storage path is required":**
+- Ensure `storagePath`, `fileSize`, and `checksum` are set in StoredDocument builders
+
+**Tests fail with "JWT_SECRET not configured":**
+- Test configuration includes JWT secret via `application-test.yml`
+
+**Tests fail with "No property 'type' found":**
+- Ensure Spring Data method names match entity fields (e.g., `existsByAggregateIdAndEventType`)
+
+**Container startup fails:**
+- Ensure Docker is running
+- Check ports are not in use: `docker ps --filter "name=test-"`
+
 ## Monitoring
 
 ### Actuator Endpoints
