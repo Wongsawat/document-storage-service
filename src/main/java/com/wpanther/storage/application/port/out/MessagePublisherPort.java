@@ -1,9 +1,9 @@
-package com.wpanther.storage.domain.port.outbound;
+package com.wpanther.storage.application.port.out;
 
-import com.wpanther.storage.domain.event.DocumentStoredEvent;
-import com.wpanther.storage.domain.event.DocumentStorageReplyEvent;
-import com.wpanther.storage.domain.event.SignedXmlStorageReplyEvent;
-import com.wpanther.storage.domain.event.PdfStorageReplyEvent;
+import com.wpanther.storage.application.dto.event.DocumentStoredEvent;
+import com.wpanther.storage.application.dto.event.DocumentStorageReplyEvent;
+import com.wpanther.storage.application.dto.event.SignedXmlStorageReplyEvent;
+import com.wpanther.storage.application.dto.event.PdfStorageReplyEvent;
 
 /**
  * Outbound port for publishing messages to Kafka via the Transactional Outbox pattern.

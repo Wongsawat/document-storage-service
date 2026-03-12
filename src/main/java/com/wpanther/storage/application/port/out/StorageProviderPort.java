@@ -1,4 +1,4 @@
-package com.wpanther.storage.domain.port.outbound;
+package com.wpanther.storage.application.port.out;
 
 import com.wpanther.storage.domain.model.StorageResult;
 import com.wpanther.storage.domain.model.StorageException;

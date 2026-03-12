@@ -2,7 +2,7 @@ package com.wpanther.storage.infrastructure.adapter.outbound.persistence;
 
 import com.wpanther.storage.domain.model.DocumentType;
 import com.wpanther.storage.domain.model.StoredDocument;
-import com.wpanther.storage.domain.port.outbound.DocumentRepositoryPort;
+import com.wpanther.storage.domain.repository.DocumentRepositoryPort;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 

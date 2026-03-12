@@ -1,4 +1,4 @@
-package com.wpanther.storage.domain.port.outbound;
+package com.wpanther.storage.domain.repository;
 
 import com.wpanther.storage.domain.model.StoredDocument;
 import com.wpanther.storage.domain.model.DocumentType;
@@ -9,12 +9,12 @@ import java.util.Optional;
  * Outbound port for document metadata persistence.
  * <p>
  * This port abstracts the metadata repository, implemented by
- * {@link com.wpanther.storage.infrastructure.adapter.outbound.persistence.MongoDocumentAdapter}.
+ * {@link com.wpanther.storage.infrastructure.adapter.out.persistence.MongoDocumentAdapter}.
  * </p>
  * <p>
  * The repository stores document metadata (filename, content type, storage location,
  * checksum, etc.) in MongoDB. The actual file content is stored separately via
- * {@link com.wpanther.storage.domain.port.outbound.StorageProviderPort}.
+ * {@link com.wpanther.storage.application.port.out.StorageProviderPort}.
  * </p>
  * <p>
  * All operations are non-transactional with respect to MongoDB. For transactional

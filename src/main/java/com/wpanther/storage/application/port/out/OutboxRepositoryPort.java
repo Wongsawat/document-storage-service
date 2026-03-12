@@ -1,4 +1,4 @@
-package com.wpanther.storage.domain.port.outbound;
+package com.wpanther.storage.application.port.out;
 
 import com.wpanther.saga.domain.outbox.OutboxEvent;
 

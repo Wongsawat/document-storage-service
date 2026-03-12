@@ -1,7 +1,8 @@
 package com.wpanther.storage.domain.service;
 
 import com.wpanther.storage.domain.model.*;
-import com.wpanther.storage.domain.port.outbound.*;
+import com.wpanther.storage.domain.repository.DocumentRepositoryPort;
+import com.wpanther.storage.application.port.out.StorageProviderPort;
 import com.wpanther.storage.domain.exception.*;
 import com.wpanther.storage.domain.port.inbound.DocumentStorageUseCase;
 import com.wpanther.storage.domain.util.ContentTypeUtil;

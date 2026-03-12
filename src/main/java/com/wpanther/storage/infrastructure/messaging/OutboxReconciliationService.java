@@ -1,7 +1,7 @@
 package com.wpanther.storage.infrastructure.messaging;
 
 import com.wpanther.saga.domain.outbox.OutboxStatus;
-import com.wpanther.storage.domain.port.outbound.DocumentRepositoryPort;
+import com.wpanther.storage.domain.repository.DocumentRepositoryPort;
 import com.wpanther.storage.domain.model.StoredDocument;
 import com.wpanther.storage.infrastructure.adapter.outbound.persistence.outbox.OutboxEventEntity;
 import com.wpanther.storage.infrastructure.adapter.outbound.persistence.outbox.SpringDataOutboxRepository;

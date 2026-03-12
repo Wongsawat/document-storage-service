@@ -1,6 +1,6 @@
 package com.wpanther.storage.infrastructure.adapter.inbound.messaging;
 
-import com.wpanther.storage.domain.event.*;
+import com.wpanther.storage.application.dto.event.*;
 import com.wpanther.storage.domain.port.inbound.SagaCommandUseCase;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.camel.builder.RouteBuilder;

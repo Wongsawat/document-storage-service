@@ -2,7 +2,7 @@ package com.wpanther.storage.infrastructure.adapter.outbound.storage;
 
 import com.wpanther.storage.domain.model.StorageException;
 import com.wpanther.storage.domain.model.StorageResult;
-import com.wpanther.storage.domain.port.outbound.StorageProviderPort;
+import com.wpanther.storage.application.port.out.StorageProviderPort;
 import com.wpanther.storage.domain.util.ContentTypeUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;

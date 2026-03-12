@@ -1,11 +1,11 @@
 package com.wpanther.storage.domain.service;
 
-import com.wpanther.storage.domain.event.*;
+import com.wpanther.storage.application.dto.event.*;
 import com.wpanther.storage.domain.exception.StorageFailedException;
 import com.wpanther.storage.domain.exception.InvalidDocumentException;
 import com.wpanther.storage.domain.model.DocumentType;
 import com.wpanther.storage.domain.model.StoredDocument;
-import com.wpanther.storage.domain.port.outbound.MessagePublisherPort;
+import com.wpanther.storage.application.port.out.MessagePublisherPort;
 import com.wpanther.storage.domain.port.inbound.SagaCommandUseCase;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

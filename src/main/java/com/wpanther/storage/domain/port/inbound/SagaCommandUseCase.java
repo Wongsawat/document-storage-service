@@ -1,6 +1,6 @@
 package com.wpanther.storage.domain.port.inbound;
 
-import com.wpanther.storage.domain.event.*;
+import com.wpanther.storage.application.dto.event.*;
 
 /**
  * Inbound port for saga command handling.
