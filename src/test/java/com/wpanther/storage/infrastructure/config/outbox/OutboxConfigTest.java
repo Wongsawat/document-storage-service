@@ -1,13 +1,12 @@
 package com.wpanther.storage.infrastructure.config.outbox;
 
 import com.wpanther.saga.domain.outbox.OutboxEventRepository;
-import com.wpanther.storage.infrastructure.adapter.outbound.persistence.MongoOutboxEventAdapter;
+import com.wpanther.storage.infrastructure.adapter.out.persistence.MongoOutboxEventAdapter;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.mongodb.core.MongoTemplate;
-import org.springframework.web.client.RestTemplate;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -38,33 +37,6 @@ class OutboxConfigTest {
     }
 
     @Nested
-    @DisplayName("restTemplate()")
-    class RestTemplateBeanTests {
-
-        @Test
-        @DisplayName("Should create RestTemplate bean")
-        void shouldCreateRestTemplateBean() {
-            OutboxConfig config = new OutboxConfig();
-
-            assertDoesNotThrow(() -> {
-                var method = OutboxConfig.class.getDeclaredMethod("restTemplate");
-                assertNotNull(method);
-                assertEquals(RestTemplate.class, method.getReturnType());
-            });
-        }
-
-        @Test
-        @DisplayName("Should create new RestTemplate instance")
-        void shouldCreateNewRestTemplateInstance() {
-            OutboxConfig config = new OutboxConfig();
-            RestTemplate restTemplate = config.restTemplate();
-
-            assertNotNull(restTemplate);
-            assertTrue(restTemplate instanceof RestTemplate);
-        }
-    }
-
-    @Nested
     @DisplayName("Configuration annotations")
     class ConfigurationAnnotationsTests {
 
@@ -75,14 +47,12 @@ class OutboxConfigTest {
         }
 
         @Test
-        @DisplayName("Should have Bean annotations")
+        @DisplayName("Should have Bean annotation on outboxEventRepository")
         void shouldHaveBeanAnnotations() {
             assertDoesNotThrow(() -> {
                 var outboxBean = OutboxConfig.class.getDeclaredMethod("outboxEventRepository", MongoTemplate.class);
-                var restTemplateBean = OutboxConfig.class.getDeclaredMethod("restTemplate");
 
                 assertNotNull(outboxBean.getAnnotation(org.springframework.context.annotation.Bean.class));
-                assertNotNull(restTemplateBean.getAnnotation(org.springframework.context.annotation.Bean.class));
             });
         }
 
