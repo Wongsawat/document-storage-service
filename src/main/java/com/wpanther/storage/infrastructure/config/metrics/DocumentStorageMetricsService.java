@@ -1,4 +1,4 @@
-package com.wpanther.storage.infrastructure.config;
+package com.wpanther.storage.infrastructure.config.metrics;
 
 import com.wpanther.storage.domain.model.DocumentType;
 import io.micrometer.core.instrument.Counter;

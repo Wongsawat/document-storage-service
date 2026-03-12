@@ -2,7 +2,7 @@ package com.wpanther.storage.infrastructure.adapter.out.http;
 
 import com.wpanther.storage.application.port.out.PdfDownloadPort;
 import com.wpanther.storage.domain.exception.StorageFailedException;
-import com.wpanther.storage.infrastructure.config.DocumentStorageMetricsService;
+import com.wpanther.storage.infrastructure.config.metrics.DocumentStorageMetricsService;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import io.github.resilience4j.retry.annotation.Retry;
 import org.slf4j.Logger;

@@ -5,7 +5,7 @@ import com.wpanther.storage.domain.repository.DocumentRepositoryPort;
 import com.wpanther.storage.application.port.out.StorageProviderPort;
 import com.wpanther.storage.domain.exception.*;
 import com.wpanther.storage.domain.util.ContentTypeUtil;
-import com.wpanther.storage.infrastructure.config.DocumentStorageMetricsService;
+import com.wpanther.storage.infrastructure.config.metrics.DocumentStorageMetricsService;
 import io.micrometer.core.instrument.Timer;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.springframework.stereotype.Service;

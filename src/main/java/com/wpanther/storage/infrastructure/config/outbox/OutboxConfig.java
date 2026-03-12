@@ -1,4 +1,4 @@
-package com.wpanther.storage.infrastructure.config;
+package com.wpanther.storage.infrastructure.config.outbox;
 
 import com.wpanther.saga.domain.outbox.OutboxEventRepository;
 import com.wpanther.storage.infrastructure.adapter.out.persistence.MongoOutboxEventAdapter;

@@ -1,4 +1,4 @@
-package com.wpanther.storage.infrastructure.config;
+package com.wpanther.storage.infrastructure.config.metrics;
 
 import io.micrometer.core.instrument.MeterRegistry;
 import org.springframework.context.annotation.Bean;

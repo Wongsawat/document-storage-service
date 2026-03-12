@@ -5,7 +5,7 @@ import com.wpanther.storage.domain.repository.DocumentRepositoryPort;
 import com.wpanther.storage.domain.model.StoredDocument;
 import com.wpanther.storage.infrastructure.adapter.out.persistence.outbox.OutboxEventEntity;
 import com.wpanther.storage.infrastructure.adapter.out.persistence.outbox.SpringDataOutboxRepository;
-import com.wpanther.storage.infrastructure.config.DocumentStorageMetricsService;
+import com.wpanther.storage.infrastructure.config.metrics.DocumentStorageMetricsService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;

@@ -1,4 +1,4 @@
-package com.wpanther.storage.infrastructure.config;
+package com.wpanther.storage.infrastructure.config.resilience;
 
 import io.github.resilience4j.circuitbreaker.CircuitBreakerConfig;
 import io.github.resilience4j.circuitbreaker.CircuitBreakerRegistry;
