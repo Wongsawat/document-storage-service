@@ -2,9 +2,9 @@ package com.wpanther.storage.integration;
 
 import com.wpanther.storage.domain.model.DocumentType;
 import com.wpanther.storage.domain.model.StoredDocument;
-import com.wpanther.storage.domain.port.outbound.DocumentRepositoryPort;
-import com.wpanther.storage.infrastructure.adapter.outbound.persistence.outbox.OutboxEventEntity;
-import com.wpanther.storage.infrastructure.adapter.outbound.persistence.outbox.SpringDataOutboxRepository;
+import com.wpanther.storage.domain.repository.DocumentRepositoryPort;
+import com.wpanther.storage.infrastructure.adapter.out.persistence.outbox.OutboxEventEntity;
+import com.wpanther.storage.infrastructure.adapter.out.persistence.outbox.SpringDataOutboxRepository;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
