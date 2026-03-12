@@ -11,8 +11,8 @@ import java.io.InputStream;
  * with storage without coupling to specific implementations. Implementations include:
  * </p>
  * <ul>
- *   <li>{@link com.wpanther.storage.infrastructure.adapter.outbound.storage.LocalFileStorageAdapter}</li>
- *   <li>{@link com.wpanther.storage.infrastructure.adapter.outbound.storage.S3FileStorageAdapter}</li>
+ *   <li>{@link com.wpanther.storage.infrastructure.adapter.out.storage.LocalFileStorageAdapter}</li>
+ *   <li>{@link com.wpanther.storage.infrastructure.adapter.out.storage.S3FileStorageAdapter}</li>
  * </ul>
  * <p>
  * Implementations must be thread-safe and handle concurrent access appropriately.

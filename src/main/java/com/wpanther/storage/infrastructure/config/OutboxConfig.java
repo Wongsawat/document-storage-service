@@ -1,7 +1,7 @@
 package com.wpanther.storage.infrastructure.config;
 
 import com.wpanther.saga.domain.outbox.OutboxEventRepository;
-import com.wpanther.storage.infrastructure.adapter.outbound.persistence.MongoOutboxEventAdapter;
+import com.wpanther.storage.infrastructure.adapter.out.persistence.MongoOutboxEventAdapter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

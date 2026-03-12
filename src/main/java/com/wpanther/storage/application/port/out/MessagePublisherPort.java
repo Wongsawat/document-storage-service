@@ -9,7 +9,7 @@ import com.wpanther.storage.application.dto.event.PdfStorageReplyEvent;
  * Outbound port for publishing messages to Kafka via the Transactional Outbox pattern.
  * <p>
  * This port abstracts message publishing, implemented by
- * {@link com.wpanther.storage.infrastructure.adapter.outbound.messaging.MessagePublisherAdapter}.
+ * {@link com.wpanther.storage.infrastructure.adapter.out.messaging.MessagePublisherAdapter}.
  * </p>
  * <p>
  * All methods write to the outbox table within the current transaction. Debezium CDC
@@ -23,7 +23,7 @@ import com.wpanther.storage.application.dto.event.PdfStorageReplyEvent;
  *   <li><b>Saga Replies</b>: Published to orchestrator to coordinate saga steps</li>
  * </ul>
  *
- * @see com.wpanther.storage.infrastructure.adapter.outbound.messaging.MessagePublisherAdapter
+ * @see com.wpanther.storage.infrastructure.adapter.out.messaging.MessagePublisherAdapter
  */
 public interface MessagePublisherPort {
 

@@ -6,7 +6,7 @@ import com.wpanther.saga.domain.outbox.OutboxEvent;
  * Outbound port for outbox event persistence.
  * <p>
  * This port abstracts the Transactional Outbox pattern repository, implemented by
- * {@link com.wpanther.storage.infrastructure.adapter.outbound.persistence.outbox.JpaOutboxEventRepository}.
+ * {@link com.wpanther.storage.infrastructure.adapter.out.persistence.outbox.JpaOutboxEventRepository}.
  * </p>
  * <p>
  * The outbox pattern ensures exactly-once message delivery to Kafka by:

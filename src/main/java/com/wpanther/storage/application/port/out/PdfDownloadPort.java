@@ -1,7 +1,7 @@
 package com.wpanther.storage.application.port.out;
 
 /**
- * Outbound port for downloading PDF files from external URLs.
+ * Outbound port for downloading files from external URLs.
  * Implemented by infrastructure/adapter/out/http/PdfDownloadAdapter.
  */
 public interface PdfDownloadPort {
@@ -13,4 +13,12 @@ public interface PdfDownloadPort {
      * @return the downloaded PDF bytes
      */
     byte[] downloadPdf(String url);
+
+    /**
+     * Downloads content from the given URL as a String.
+     *
+     * @param url the URL to download from (e.g. MinIO presigned URL)
+     * @return the downloaded content as String
+     */
+    String downloadContent(String url);
 }
