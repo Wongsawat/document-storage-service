@@ -2,7 +2,7 @@ package com.wpanther.storage.infrastructure.adapter.out.persistence;
 
 import com.wpanther.saga.domain.outbox.OutboxEvent;
 import com.wpanther.saga.domain.outbox.OutboxStatus;
-import com.wpanther.storage.infrastructure.adapter.outbound.persistence.MongoOutboxEventAdapter;
+import com.wpanther.storage.infrastructure.adapter.out.persistence.MongoOutboxEventAdapter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
