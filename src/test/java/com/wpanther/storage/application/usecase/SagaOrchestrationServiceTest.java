@@ -1,13 +1,14 @@
 package com.wpanther.storage.application.usecase;
 
 import com.wpanther.saga.domain.enums.SagaStep;
-import com.wpanther.storage.domain.event.*;
+import com.wpanther.storage.application.dto.event.*;
 import com.wpanther.storage.domain.exception.InvalidDocumentException;
 import com.wpanther.storage.domain.exception.StorageFailedException;
 import com.wpanther.storage.domain.model.DocumentType;
 import com.wpanther.storage.domain.model.StoredDocument;
-import com.wpanther.storage.domain.port.outbound.MessagePublisherPort;
-import com.wpanther.storage.domain.port.inbound.SagaCommandUseCase;
+import com.wpanther.storage.application.port.out.MessagePublisherPort;
+import com.wpanther.storage.application.port.out.PdfDownloadPort;
+import com.wpanther.storage.application.usecase.SagaCommandUseCase;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -34,7 +35,7 @@ class SagaOrchestrationServiceTest {
     private FileStorageDomainService storageService;
 
     @Mock
-    private PdfDownloadDomainService pdfDownloadService;
+    private PdfDownloadPort pdfDownloadPort;
 
     @Mock
     private MessagePublisherPort messagePublisher;
@@ -87,7 +88,7 @@ class SagaOrchestrationServiceTest {
             );
 
             when(storageService.existsByInvoiceAndType(documentId, DocumentType.INVOICE_PDF)).thenReturn(false);
-            when(pdfDownloadService.downloadPdf(command.getSignedPdfUrl())).thenReturn(pdfContent);
+            when(pdfDownloadPort.downloadPdf(command.getSignedPdfUrl())).thenReturn(pdfContent);
             when(storageService.storeDocument(eq(pdfContent), anyString(), eq(DocumentType.INVOICE_PDF), eq(documentId)))
                 .thenReturn(storedDoc);
             doNothing().when(messagePublisher).publishEvent(any(DocumentStoredEvent.class));
@@ -116,7 +117,7 @@ class SagaOrchestrationServiceTest {
 
             service.handleProcessCommand(command);
 
-            verify(pdfDownloadService, never()).downloadPdf(anyString());
+            verify(pdfDownloadPort, never()).downloadPdf(anyString());
             verify(storageService, never()).storeDocument(any(), anyString(), any(), anyString());
             ArgumentCaptor<DocumentStorageReplyEvent> replyCaptor = ArgumentCaptor.forClass(DocumentStorageReplyEvent.class);
             verify(messagePublisher).publishReply(replyCaptor.capture());
@@ -134,7 +135,7 @@ class SagaOrchestrationServiceTest {
             );
 
             when(storageService.existsByInvoiceAndType(documentId, DocumentType.INVOICE_PDF)).thenReturn(false);
-            when(pdfDownloadService.downloadPdf(command.getSignedPdfUrl()))
+            when(pdfDownloadPort.downloadPdf(command.getSignedPdfUrl()))
                 .thenThrow(new StorageFailedException("Download failed"));
 
             service.handleProcessCommand(command);
@@ -175,7 +176,7 @@ class SagaOrchestrationServiceTest {
             );
 
             when(storageService.existsByInvoiceAndType(documentId, DocumentType.SIGNED_XML)).thenReturn(false);
-            when(pdfDownloadService.downloadContent(command.getSignedXmlUrl())).thenReturn(xmlContent);
+            when(pdfDownloadPort.downloadContent(command.getSignedXmlUrl())).thenReturn(xmlContent);
             when(storageService.storeDocument(eq(xmlBytes), anyString(), eq(DocumentType.SIGNED_XML), eq(documentId)))
                 .thenReturn(storedDoc);
             doNothing().when(messagePublisher).publishReply(any(SignedXmlStorageReplyEvent.class));
@@ -202,7 +203,7 @@ class SagaOrchestrationServiceTest {
 
             service.handleProcessCommand(command);
 
-            verify(pdfDownloadService, never()).downloadContent(anyString());
+            verify(pdfDownloadPort, never()).downloadContent(anyString());
             ArgumentCaptor<SignedXmlStorageReplyEvent> replyCaptor = ArgumentCaptor.forClass(SignedXmlStorageReplyEvent.class);
             verify(messagePublisher).publishReply(replyCaptor.capture());
             assertEquals("saga-456", replyCaptor.getValue().getSagaId());
@@ -219,7 +220,7 @@ class SagaOrchestrationServiceTest {
             );
 
             when(storageService.existsByInvoiceAndType(documentId, DocumentType.SIGNED_XML)).thenReturn(false);
-            when(pdfDownloadService.downloadContent(command.getSignedXmlUrl())).thenReturn("");
+            when(pdfDownloadPort.downloadContent(command.getSignedXmlUrl())).thenReturn("");
 
             service.handleProcessCommand(command);
 
@@ -257,7 +258,7 @@ class SagaOrchestrationServiceTest {
             );
 
             when(storageService.existsByInvoiceAndType(documentId, DocumentType.UNSIGNED_PDF)).thenReturn(false);
-            when(pdfDownloadService.downloadPdf(command.getPdfUrl())).thenReturn(pdfContent);
+            when(pdfDownloadPort.downloadPdf(command.getPdfUrl())).thenReturn(pdfContent);
             when(storageService.storeDocument(eq(pdfContent), anyString(), eq(DocumentType.UNSIGNED_PDF), eq(documentId)))
                 .thenReturn(storedDoc);
             doNothing().when(messagePublisher).publishReply(any(PdfStorageReplyEvent.class));
@@ -300,7 +301,7 @@ class SagaOrchestrationServiceTest {
 
             service.handleProcessCommand(command);
 
-            verify(pdfDownloadService, never()).downloadPdf(anyString());
+            verify(pdfDownloadPort, never()).downloadPdf(anyString());
             ArgumentCaptor<PdfStorageReplyEvent> replyCaptor = ArgumentCaptor.forClass(PdfStorageReplyEvent.class);
             verify(messagePublisher).publishReply(replyCaptor.capture());
             assertEquals("saga-789", replyCaptor.getValue().getSagaId());

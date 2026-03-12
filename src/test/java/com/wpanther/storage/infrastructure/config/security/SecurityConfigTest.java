@@ -1,8 +1,8 @@
 package com.wpanther.storage.infrastructure.config.security;
 
-import com.wpanther.storage.infrastructure.adapter.inbound.security.JwtAccessDeniedHandler;
-import com.wpanther.storage.infrastructure.adapter.inbound.security.JwtAuthenticationAdapter;
-import com.wpanther.storage.infrastructure.adapter.inbound.security.JwtAuthenticationEntryPoint;
+import com.wpanther.storage.infrastructure.adapter.in.security.JwtAccessDeniedHandler;
+import com.wpanther.storage.infrastructure.adapter.in.security.JwtAuthenticationAdapter;
+import com.wpanther.storage.infrastructure.adapter.in.security.JwtAuthenticationEntryPoint;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;

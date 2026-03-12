@@ -1,14 +1,14 @@
 package com.wpanther.storage.infrastructure.adapter.in.rest;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.wpanther.storage.domain.port.outbound.DocumentRepositoryPort;
-import com.wpanther.storage.infrastructure.adapter.inbound.security.JwtAccessDeniedHandler;
-import com.wpanther.storage.infrastructure.adapter.inbound.security.JwtAuthenticationAdapter;
-import com.wpanther.storage.infrastructure.adapter.inbound.security.JwtAuthenticationEntryPoint;
-import com.wpanther.storage.infrastructure.adapter.inbound.security.JwtService;
-import com.wpanther.storage.infrastructure.adapter.inbound.security.RateLimitingFilter;
-import com.wpanther.storage.infrastructure.adapter.inbound.security.TokenBlacklistService;
-import com.wpanther.storage.domain.port.outbound.StorageProviderPort;
+import com.wpanther.storage.domain.repository.DocumentRepositoryPort;
+import com.wpanther.storage.infrastructure.adapter.in.security.JwtAccessDeniedHandler;
+import com.wpanther.storage.infrastructure.adapter.in.security.JwtAuthenticationAdapter;
+import com.wpanther.storage.infrastructure.adapter.in.security.JwtAuthenticationEntryPoint;
+import com.wpanther.storage.infrastructure.adapter.in.security.JwtService;
+import com.wpanther.storage.infrastructure.adapter.in.security.RateLimitingFilter;
+import com.wpanther.storage.infrastructure.adapter.in.security.TokenBlacklistService;
+import com.wpanther.storage.application.port.out.StorageProviderPort;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;

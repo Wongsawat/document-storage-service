@@ -2,7 +2,7 @@ package com.wpanther.storage.infrastructure.adapter.in.rest;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.wpanther.storage.domain.exception.DocumentNotFoundException;
-import com.wpanther.storage.domain.port.inbound.DocumentStorageUseCase;
+import com.wpanther.storage.application.usecase.DocumentStorageUseCase;
 import com.wpanther.storage.domain.model.DocumentType;
 import com.wpanther.storage.domain.model.StoredDocument;
 import org.junit.jupiter.api.AfterEach;

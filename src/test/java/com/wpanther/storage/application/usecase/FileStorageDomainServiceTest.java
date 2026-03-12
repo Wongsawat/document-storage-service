@@ -1,9 +1,10 @@
 package com.wpanther.storage.application.usecase;
 
 import com.wpanther.storage.domain.model.*;
-import com.wpanther.storage.domain.port.outbound.*;
+import com.wpanther.storage.domain.repository.DocumentRepositoryPort;
 import com.wpanther.storage.domain.exception.*;
-import com.wpanther.storage.infrastructure.config.DocumentStorageMetricsService;
+import com.wpanther.storage.application.port.out.StorageProviderPort;
+import com.wpanther.storage.infrastructure.config.metrics.DocumentStorageMetricsService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
