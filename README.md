@@ -37,8 +37,9 @@ The Document Storage Service:
 **Value Objects:**
 - `DocumentType` - `INVOICE_PDF`, `INVOICE_XML`, `ATTACHMENT`, `OTHER`
 
-**Domain Services:**
-- `FileStorageProvider` - Abstract storage backend interface
+**Ports (Interfaces):**
+- `DocumentRepositoryPort` - Repository interface (in `domain/repository/`)
+- `StorageProviderPort` - Storage abstraction (outbound port)
 
 **Domain Events:**
 - `DocumentStoredEvent` - Published after successful document storage
@@ -335,6 +336,8 @@ docker run -p 8084:8084 \
 
 ## Project Structure
 
+This service follows **Hexagonal Architecture** (Ports and Adapters) with **Domain-Driven Design** patterns.
+
 ```
 src/main/java/com/wpanther/storage/
 ├── DocumentStorageServiceApplication.java
@@ -342,37 +345,88 @@ src/main/java/com/wpanther/storage/
 │   ├── model/
 │   │   ├── StoredDocument.java          # Aggregate root (manual Builder)
 │   │   └── DocumentType.java            # INVOICE_PDF, INVOICE_XML, ATTACHMENT, OTHER
-│   ├── event/
+│   ├── repository/
+│   │   └── DocumentRepositoryPort.java  # Repository interface
+│   └── exception/
+│       ├── DocumentNotFoundException.java
+│       ├── InvalidDocumentException.java
+│       └── StorageFailedException.java
+├── application/
+│   ├── dto/event/                       # Kafka wire DTOs
 │   │   ├── DocumentStoredEvent.java     # Extends saga-commons IntegrationEvent
 │   │   ├── ProcessDocumentStorageCommand.java
 │   │   ├── CompensateDocumentStorageCommand.java
-│   │   └── DocumentStorageReplyEvent.java  # Extends saga-commons SagaReply
-│   └── service/
-│       └── FileStorageProvider.java     # Storage abstraction
-├── application/
-│   ├── controller/
-│   │   └── DocumentStorageController.java  # REST API
-│   └── service/
-│       ├── DocumentStorageService.java  # Storage orchestration
-│       ├── PdfDownloadService.java      # HTTP PDF download
-│       └── SagaCommandHandler.java      # Saga process + compensation
-└── infrastructure/
-    ├── persistence/
-    │   ├── StoredDocumentEntity.java    # MongoDB entity
-    │   ├── MongoDocumentRepository.java
-    │   └── outbox/
-    │       ├── OutboxEventEntity.java   # PostgreSQL JPA entity
-    │       ├── SpringDataOutboxRepository.java
-    │       └── JpaOutboxEventRepository.java
-    ├── storage/
-    │   ├── LocalFileStorageProvider.java
-    │   └── S3FileStorageProvider.java
-    ├── messaging/
-    │   ├── EventPublisher.java          # Outbox-based event publishing
-    │   └── SagaReplyPublisher.java      # Outbox-based saga replies
-    └── config/
-        ├── SagaRouteConfig.java         # Camel routes for saga
-        └── OutboxConfig.java            # Outbox bean config
+│   │   ├── DocumentStorageReplyEvent.java  # Extends saga-commons SagaReply
+│   │   ├── ProcessPdfStorageCommand.java
+│   │   ├── CompensatePdfStorageCommand.java
+│   │   ├── ProcessSignedXmlStorageCommand.java
+│   │   ├── CompensateSignedXmlStorageCommand.java
+│   │   ├── PdfStorageReplyEvent.java
+│   │   └── SignedXmlStorageReplyEvent.java
+│   ├── port/out/                        # Outbound ports
+│   │   ├── StorageProviderPort.java     # Storage abstraction
+│   │   ├── MessagePublisherPort.java    # Event publishing port
+│   │   ├── OutboxRepositoryPort.java   # Outbox repository port
+│   │   └── PdfDownloadPort.java        # HTTP PDF download port
+│   └── usecase/                         # Application use cases
+│       ├── DocumentStorageUseCase.java  # Inbound port: REST operations
+│       ├── AuthenticationUseCase.java   # Inbound port: auth operations
+│       ├── SagaCommandUseCase.java     # Inbound port: saga commands
+│       ├── FileStorageDomainService.java # Domain service
+│       └── SagaOrchestrationService.java # Saga orchestration
+├── infrastructure/
+│   ├── adapter/
+│   │   ├── in/                          # Inbound adapters
+│   │   │   ├── rest/
+│   │   │   │   ├── DocumentStorageController.java
+│   │   │   │   ├── AuthenticationController.java
+│   │   │   │   └── DocumentValidator.java
+│   │   │   ├── messaging/
+│   │   │   │   └── SagaCommandAdapter.java  # Kafka Camel consumer
+│   │   │   ├── scheduler/
+│   │   │   │   └── OutboxReconciliationService.java
+│   │   │   └── security/
+│   │   │       ├── JwtService.java
+│   │   │       ├── JwtAuthenticationAdapter.java
+│   │   │       ├── JwtAuthenticationEntryPoint.java
+│   │   │       ├── JwtAccessDeniedHandler.java
+│   │   │       ├── RateLimitingFilter.java
+│   │   │       ├── TokenBlacklistService.java
+│   │   │       ├── DocumentStorageUserDetailsService.java
+│   │   │       └── exception/
+│   │   │           ├── SecurityException.java
+│   │   │           ├── AuthenticationFailedException.java
+│   │   │           ├── AuthorizationFailedException.java
+│   │   │           └── InvalidTokenException.java
+│   │   └── out/                         # Outbound adapters
+│   │       ├── http/
+│   │       │   └── PdfDownloadAdapter.java  # Implements PdfDownloadPort
+│   │       ├── messaging/
+│   │       │   ├── MessagePublisherAdapter.java  # Outbox event publishing
+│   │       │   └── SagaReplyPublisher.java
+│   │       ├── persistence/
+│   │       │   ├── StoredDocumentEntity.java  # MongoDB entity
+│   │       │   ├── MongoDocumentAdapter.java
+│   │       │   ├── DocumentRepositoryAdapter.java
+│   │       │   ├── StoredDocumentMapper.java
+│   │       │   └── outbox/
+│   │       │       ├── OutboxEventEntity.java  # PostgreSQL JPA entity
+│   │       │       ├── SpringDataOutboxRepository.java
+│   │       │       └── JpaOutboxEventRepository.java
+│   │       └── storage/
+│   │           ├── LocalFileStorageAdapter.java
+│   │           └── S3FileStorageAdapter.java
+│   └── config/
+│       ├── metrics/
+│       │   ├── MetricsConfig.java
+│       │   └── DocumentStorageMetricsService.java
+│       ├── outbox/
+│       │   └── OutboxConfig.java
+│       ├── resilience/
+│       │   └── ResilienceConfig.java
+│       └── security/
+│           ├── SecurityConfig.java
+│           └── JwtConfigValidator.java
 
 src/main/resources/
 ├── application.yml
