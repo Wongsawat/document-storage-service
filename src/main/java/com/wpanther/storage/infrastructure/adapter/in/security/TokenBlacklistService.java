@@ -6,14 +6,19 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.time.Duration;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Service for managing JWT token revocation/blacklist.
  * <p>
  * Uses Caffeine cache for efficient in-memory storage of revoked tokens
  * with automatic expiration to prevent unbounded growth.
+ * <p>
+ * <b>Security:</b> Tokens are stored as SHA-256 hashes to prevent leakage
+ * of the actual token values in memory.
  * <p>
  * Use cases:
  * - Forced logout after password change
@@ -54,8 +59,9 @@ public class TokenBlacklistService {
      * @param token The JWT token to revoke
      */
     public void revokeToken(String token) {
+        String tokenHash = hashToken(token);
         log.debug("Revoking token");
-        revokedTokens.put(token, true);
+        revokedTokens.put(tokenHash, true);
         log.info("Token revoked successfully");
     }
 
@@ -66,7 +72,8 @@ public class TokenBlacklistService {
      * @return true if the token is revoked, false otherwise
      */
     public boolean isRevoked(String token) {
-        Boolean revoked = revokedTokens.getIfPresent(token);
+        String tokenHash = hashToken(token);
+        Boolean revoked = revokedTokens.getIfPresent(tokenHash);
         if (revoked != null && revoked) {
             log.debug("Token is revoked");
             return true;
@@ -94,5 +101,32 @@ public class TokenBlacklistService {
     public void clear() {
         log.warn("Clearing all revoked tokens from blacklist");
         revokedTokens.invalidateAll();
+    }
+
+    /**
+     * Hash a token using SHA-256 for secure storage.
+     * <p>
+     * This prevents actual token values from being stored in memory,
+     * protecting against memory dump attacks.
+     *
+     * @param token the raw JWT token
+     * @return hex-encoded SHA-256 hash of the token
+     */
+    private String hashToken(String token) {
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            byte[] hash = digest.digest(token.getBytes(StandardCharsets.UTF_8));
+            StringBuilder hexString = new StringBuilder();
+            for (byte b : hash) {
+                String hex = Integer.toHexString(0xff & b);
+                if (hex.length() == 1) {
+                    hexString.append('0');
+                }
+                hexString.append(hex);
+            }
+            return hexString.toString();
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException("SHA-256 not available", e);
+        }
     }
 }

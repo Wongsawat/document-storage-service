@@ -82,9 +82,7 @@ public class JwtAuthenticationAdapter extends OncePerRequestFilter {
         String bearerToken = request.getHeader(AUTHORIZATION_HEADER);
 
         if (StringUtils.hasText(bearerToken) && bearerToken.startsWith(BEARER_PREFIX)) {
-            String token = bearerToken.substring(BEARER_PREFIX_LENGTH);
-            log.trace("Extracted JWT token: {}...", token.substring(0, Math.min(20, token.length())));
-            return token;
+            return bearerToken.substring(BEARER_PREFIX_LENGTH);
         }
 
         return null;
