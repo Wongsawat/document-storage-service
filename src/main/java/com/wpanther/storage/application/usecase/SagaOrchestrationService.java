@@ -95,7 +95,7 @@ public class SagaOrchestrationService implements SagaCommandUseCase {
         } catch (Exception e) {
             log.error("Unexpected error processing document storage command for saga: {}",
                       command.getSagaId(), e);
-            publishFailureReply(command, "Unexpected error: " + e.getMessage());
+            publishFailureReply(command, "Unexpected error processing document storage: " + command.getSagaId());
         }
     }
 
@@ -164,7 +164,7 @@ public class SagaOrchestrationService implements SagaCommandUseCase {
             publishFailureXmlReply(command, e.getMessage());
         } catch (Exception e) {
             log.error("Unexpected error storing signed XML for saga: {}", command.getSagaId(), e);
-            publishFailureXmlReply(command, "Unexpected error: " + e.getMessage());
+            publishFailureXmlReply(command, "Unexpected error storing signed XML: " + command.getSagaId());
         }
     }
 
@@ -220,7 +220,7 @@ public class SagaOrchestrationService implements SagaCommandUseCase {
             publishFailurePdfReply(command, e.getMessage());
         } catch (Exception e) {
             log.error("Unexpected error storing unsigned PDF for saga: {}", command.getSagaId(), e);
-            publishFailurePdfReply(command, "Unexpected error: " + e.getMessage());
+            publishFailurePdfReply(command, "Unexpected error storing unsigned PDF: " + command.getSagaId());
         }
     }
 
