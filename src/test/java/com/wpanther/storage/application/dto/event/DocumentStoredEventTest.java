@@ -54,18 +54,24 @@ class DocumentStoredEventTest {
         }
 
         @Test
-        @DisplayName("Events with different correlationIds should not be equal")
-        void equals_shouldDistinguishDifferentCorrelationIds() {
-            // Before the fix, TraceEvent.correlationId was always null for both events,
-            // so equals() would incorrectly treat them as equal on that field.
-            DocumentStoredEvent a = new DocumentStoredEvent(
+        @DisplayName("Events with same eventId but different correlationIds should not be equal")
+        void equals_shouldDistinguishDifferentCorrelationIds() throws JsonProcessingException {
+            // IntegrationEvent.equals() is identity-by-eventId, so two separately
+            // constructed events would differ on eventId before correlationId is compared.
+            // To reach the correlationId check in TraceEvent.equals(), both events must
+            // share the same eventId — achieved by serialising one and patching the JSON.
+            // Before the fix, TraceEvent.correlationId was always null for both, so
+            // equals() would have returned true even with different correlationId values.
+            DocumentStoredEvent original = new DocumentStoredEvent(
                     "doc-1", "inv-1", "INV-001", "f.pdf", "http://x", 100L,
                     "cs", "INVOICE_PDF", "corr-A");
-            DocumentStoredEvent b = new DocumentStoredEvent(
-                    "doc-1", "inv-1", "INV-001", "f.pdf", "http://x", 100L,
-                    "cs", "INVOICE_PDF", "corr-B");
 
-            assertNotEquals(a, b);
+            String patchedJson = objectMapper.writeValueAsString(original)
+                    .replace("\"corr-A\"", "\"corr-B\"");
+            DocumentStoredEvent sameIdDifferentCorrelation =
+                    objectMapper.readValue(patchedJson, DocumentStoredEvent.class);
+
+            assertNotEquals(original, sameIdDifferentCorrelation);
         }
 
         @Test
