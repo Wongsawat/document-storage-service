@@ -47,7 +47,7 @@ public class DocumentStoredEvent extends TraceEvent {
     public DocumentStoredEvent(String documentId, String invoiceId, String invoiceNumber,
                                 String fileName, String storageUrl, long fileSize,
                                 String checksum, String documentType, String correlationId) {
-        super(invoiceId, correlationId, SOURCE, TRACE_TYPE, null);
+        super(documentId, correlationId, SOURCE, TRACE_TYPE, null);
         this.documentId = documentId;
         this.invoiceId = invoiceId;
         this.invoiceNumber = invoiceNumber;
