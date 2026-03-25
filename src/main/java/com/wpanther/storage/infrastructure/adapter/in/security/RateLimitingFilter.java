@@ -149,7 +149,7 @@ public class RateLimitingFilter extends OncePerRequestFilter {
     /**
      * Send rate limit exceeded response.
      */
-    private void sendRateLimitResponse(HttpServletResponse response, long retryAfter) {
+    private void sendRateLimitResponse(HttpServletResponse response, long retryAfter) throws ServletException {
         response.setStatus(HttpStatus.TOO_MANY_REQUESTS.value());
         response.setContentType("application/json");
         response.setHeader(RETRY_AFTER_HEADER, String.valueOf(retryAfter));
