@@ -4,8 +4,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import com.wpanther.saga.domain.enums.SagaStep;
-import com.wpanther.saga.domain.model.TraceEvent;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -56,19 +54,18 @@ class DocumentStoredEventTest {
         }
 
         @Test
-        @DisplayName("Polymorphic TraceEvent accessor should return correlationId")
-        void getCorrelationId_polymorphicAccessorShouldReturnProvidedValue() {
-            // Arrange
-            DocumentStoredEvent event = new DocumentStoredEvent(
-                    "doc-123", "inv-001", "INV-001",
-                    "invoice.pdf", "http://localhost/doc.pdf", 12345L,
-                    "abc123checksum", "TAX_INVOICE", "corr-abc");
+        @DisplayName("Events with different correlationIds should not be equal")
+        void equals_shouldDistinguishDifferentCorrelationIds() {
+            // Before the fix, TraceEvent.correlationId was always null for both events,
+            // so equals() would incorrectly treat them as equal on that field.
+            DocumentStoredEvent a = new DocumentStoredEvent(
+                    "doc-1", "inv-1", "INV-001", "f.pdf", "http://x", 100L,
+                    "cs", "INVOICE_PDF", "corr-A");
+            DocumentStoredEvent b = new DocumentStoredEvent(
+                    "doc-1", "inv-1", "INV-001", "f.pdf", "http://x", 100L,
+                    "cs", "INVOICE_PDF", "corr-B");
 
-            // Act — call via polymorphic TraceEvent reference
-            TraceEvent traceEvent = event;
-
-            // Assert
-            assertEquals("corr-abc", traceEvent.getCorrelationId());
+            assertNotEquals(a, b);
         }
 
         @Test
