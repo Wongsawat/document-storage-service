@@ -54,7 +54,7 @@ public class LocalFileStorageAdapter implements StorageProviderPort {
             // Copy stream to file
             long bytesCopied = Files.copy(content, filePath, StandardCopyOption.REPLACE_EXISTING);
 
-            String relativePath = Paths.get(basePath).relativize(filePath).toString().replace("\\", "/");
+            String relativePath = Paths.get(basePath).relativize(filePath).toString().replace('\\', '/');
             String url = baseUrl + "/documents/" + relativePath;
 
             log.info("Stored file: {} (size: {} bytes)", filePath, bytesCopied);
