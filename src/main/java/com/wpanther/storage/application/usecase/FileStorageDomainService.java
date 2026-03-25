@@ -127,14 +127,22 @@ public class FileStorageDomainService implements DocumentStorageUseCase {
 
     @Override
     @Transactional(readOnly = true)
-    public byte[] getDocumentContent(String documentId) {
+    public InputStream getDocumentContentStream(String documentId) {
         StoredDocument doc = documentRepository.findById(documentId)
             .orElseThrow(() -> new DocumentNotFoundException("Document not found: " + documentId));
 
-        try {
-            InputStream inputStream = storageProvider.retrieve(doc.getStoragePath());
-            metrics.recordDocumentRetrieved();
+        metrics.recordDocumentRetrieved();
+        return storageProvider.retrieve(doc.getStoragePath());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    @Deprecated
+    public byte[] getDocumentContent(String documentId) {
+        try (InputStream inputStream = getDocumentContentStream(documentId)) {
             return inputStream.readAllBytes();
+        } catch (DocumentNotFoundException e) {
+            throw e; // Let domain exceptions propagate
         } catch (Exception e) {
             throw new StorageFailedException("Failed to retrieve document content: " + documentId, e);
         }

@@ -2,6 +2,8 @@ package com.wpanther.storage.application.usecase;
 
 import com.wpanther.storage.domain.model.StoredDocument;
 import com.wpanther.storage.domain.model.DocumentType;
+
+import java.io.InputStream;
 import java.util.List;
 import java.util.Optional;
 
@@ -115,16 +117,33 @@ public interface DocumentStorageUseCase {
     boolean existsByInvoiceAndType(String invoiceId, DocumentType type);
 
     /**
+     * Retrieve document content by ID as a stream.
+     * <p>
+     * Returns a streaming response for efficient large file downloads without
+     * loading the entire content into memory. Callers are responsible for
+     * closing the stream.
+     * </p>
+     *
+     * @param documentId the unique document identifier
+     * @return an input stream to read the document content
+     * @throws com.wpanther.storage.domain.exception.DocumentNotFoundException if document not found
+     * @throws com.wpanther.storage.domain.exception.StorageFailedException if content retrieval fails
+     */
+    InputStream getDocumentContentStream(String documentId);
+
+    /**
      * Retrieve document content by ID.
      * <p>
-     * Downloads the full document content from storage. For large files, consider
-     * implementing streaming downloads separately.
+     * Downloads the full document content from storage. For large files, prefer
+     * {@link #getDocumentContentStream(String)} to avoid memory issues.
      * </p>
      *
      * @param documentId the unique document identifier
      * @return the document content bytes
      * @throws com.wpanther.storage.domain.exception.DocumentNotFoundException if document not found
      * @throws com.wpanther.storage.domain.exception.StorageFailedException if content retrieval fails
+     * @deprecated Use {@link #getDocumentContentStream(String)} for large files
      */
+    @Deprecated
     byte[] getDocumentContent(String documentId);
 }

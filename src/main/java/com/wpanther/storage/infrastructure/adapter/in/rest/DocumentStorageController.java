@@ -16,6 +16,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.ByteArrayResource;
+import org.springframework.core.io.InputStreamResource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -25,6 +26,7 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -144,14 +146,14 @@ public class DocumentStorageController {
 
             StoredDocument document = documentStorageUseCase.getDocument(id)
                 .orElseThrow(() -> new DocumentNotFoundException("Document not found: " + id));
-            byte[] content = documentStorageUseCase.getDocumentContent(id);
+            InputStream content = documentStorageUseCase.getDocumentContentStream(id);
 
-            ByteArrayResource resource = new ByteArrayResource(content);
+            InputStreamResource resource = new InputStreamResource(content);
 
             return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + document.getFileName() + "\"")
                 .contentType(MediaType.parseMediaType(document.getContentType()))
-                .contentLength(content.length)
+                .contentLength(document.getFileSize())
                 .body(resource);
 
         } catch (DocumentNotFoundException e) {
