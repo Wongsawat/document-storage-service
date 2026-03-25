@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Domain service for saga command orchestration.
@@ -303,21 +304,28 @@ public class SagaOrchestrationService implements SagaCommandUseCase {
     }
 
     private void publishAlreadyExistsPdfReply(ProcessPdfStorageCommand command) {
-        storageService.getDocumentsByInvoice(command.getDocumentId())
+        Optional<StoredDocument> doc = storageService.getDocumentsByInvoice(command.getDocumentId())
             .stream()
-            .filter(doc -> doc.getDocumentType() == DocumentType.UNSIGNED_PDF)
-            .findFirst()
-            .ifPresent(doc -> {
-                String storedUrl = "/api/v1/documents/" + doc.getId() + "/download";
-                PdfStorageReplyEvent reply = PdfStorageReplyEvent.success(
-                    command.getSagaId(),
-                    command.getSagaStep(),
-                    command.getCorrelationId(),
-                    doc.getId(),
-                    storedUrl
-                );
-                messagePublisher.publishReply(reply);
-            });
+            .filter(d -> d.getDocumentType() == DocumentType.UNSIGNED_PDF)
+            .findFirst();
+
+        if (doc.isPresent()) {
+            StoredDocument stored = doc.get();
+            String storedUrl = "/api/v1/documents/" + stored.getId() + "/download";
+            PdfStorageReplyEvent reply = PdfStorageReplyEvent.success(
+                command.getSagaId(),
+                command.getSagaStep(),
+                command.getCorrelationId(),
+                stored.getId(),
+                storedUrl
+            );
+            messagePublisher.publishReply(reply);
+        } else {
+            // Document disappeared between idempotency check and reply — log and fail
+            log.warn("Unsigned PDF document disappeared during idempotency check for documentId: {}",
+                     command.getDocumentId());
+            publishFailurePdfReply(command, "Document disappeared during idempotency check");
+        }
     }
 
     private void publishFailurePdfReply(ProcessPdfStorageCommand command, String error) {
