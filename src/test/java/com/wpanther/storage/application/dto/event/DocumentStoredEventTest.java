@@ -144,6 +144,7 @@ class DocumentStoredEventTest {
             assertEquals(1024L, event.getFileSize());
             assertEquals("abc123", event.getChecksum());
             assertEquals("INVOICE_PDF", event.getDocumentType());
+            assertEquals("corr-123", event.getCorrelationId());
         }
     }
 
