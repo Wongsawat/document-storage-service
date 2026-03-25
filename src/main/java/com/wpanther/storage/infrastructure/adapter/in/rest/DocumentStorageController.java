@@ -15,8 +15,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.core.io.ByteArrayResource;
-import org.springframework.core.io.InputStreamResource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -25,6 +23,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
 import java.io.InputStream;
 import java.util.List;
@@ -137,7 +136,7 @@ public class DocumentStorageController {
         @ApiResponse(responseCode = "500", description = "Storage operation failed")
     })
     @GetMapping("/{id}")
-    public ResponseEntity<Resource> downloadDocument(
+    public ResponseEntity<StreamingResponseBody> downloadDocument(
         @Parameter(description = "Document UUID", required = true, example = "550e8400-e29b-41d4-a716-446655440000")
         @PathVariable String id) {
         try {
@@ -148,13 +147,18 @@ public class DocumentStorageController {
                 .orElseThrow(() -> new DocumentNotFoundException("Document not found: " + id));
             InputStream content = documentStorageUseCase.getDocumentContentStream(id);
 
-            InputStreamResource resource = new InputStreamResource(content);
+            StreamingResponseBody responseBody = outputStream -> {
+                try (InputStream inputStream = content) {
+                    inputStream.transferTo(outputStream);
+                    outputStream.flush();
+                }
+            };
 
             return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + document.getFileName() + "\"")
                 .contentType(MediaType.parseMediaType(document.getContentType()))
                 .contentLength(document.getFileSize())
-                .body(resource);
+                .body(responseBody);
 
         } catch (DocumentNotFoundException e) {
             log.warn("Document not found: {}", id);
