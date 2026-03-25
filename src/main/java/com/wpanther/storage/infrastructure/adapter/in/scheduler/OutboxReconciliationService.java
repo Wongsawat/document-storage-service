@@ -15,6 +15,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -33,6 +34,10 @@ import java.util.List;
  *   <li>Has no corresponding outbox event published within the configured window</li>
  * </ul>
  * </p>
+ * <p>
+ * <b>Testing:</b> The {@link Clock} is injected to allow time-based testing.
+ * Use {@link Clock#fixed(Instant, ZoneId)} in tests for deterministic results.
+ * </p>
  */
 @Service
 @Slf4j
@@ -43,6 +48,7 @@ public class OutboxReconciliationService {
     private final SpringDataOutboxRepository outboxRepository;
     private final DocumentStorageMetricsService metrics;
     private final ObjectMapper objectMapper;
+    private final Clock clock;
 
     @Value("${app.reconciliation.batch-size:100}")
     private int batchSize;
@@ -74,7 +80,7 @@ public class OutboxReconciliationService {
         log.info("Starting orphaned document reconciliation (lookback: {} minutes)", lookbackMinutes);
 
         try {
-            LocalDateTime cutoffTime = LocalDateTime.now().minusMinutes(lookbackMinutes);
+            LocalDateTime cutoffTime = LocalDateTime.now(clock).minusMinutes(lookbackMinutes);
             List<StoredDocument> recentDocuments = documentRepositoryPort.findByCreatedAtAfter(cutoffTime);
 
             int orphanedCount = 0;
@@ -118,7 +124,7 @@ public class OutboxReconciliationService {
         log.info("Starting cleanup of orphaned documents older than {} days", retentionDays);
 
         try {
-            LocalDateTime cutoffTime = LocalDateTime.now().minusDays(retentionDays);
+            LocalDateTime cutoffTime = LocalDateTime.now(clock).minusDays(retentionDays);
             List<StoredDocument> oldDocuments = documentRepositoryPort.findByCreatedAtBefore(cutoffTime);
 
             int deletedCount = 0;
@@ -171,7 +177,7 @@ public class OutboxReconciliationService {
                     .aggregateType("StoredDocument")
                     .eventType("DocumentOrphanedEvent")
                     .payload(formatOrphanedEventPayload(document, invoiceId))
-                    .createdAt(java.time.Instant.now())
+                    .createdAt(Instant.now(clock))
                     .status(OutboxStatus.PENDING)
                     .build();
 
@@ -200,7 +206,7 @@ public class OutboxReconciliationService {
             document.getDocumentType().name(),
             document.getStorageUrl(),
             document.getCreatedAt().toString(),
-            Instant.now().toString()
+            Instant.now(clock).toString()
         );
         try {
             return objectMapper.writeValueAsString(payload);
@@ -229,7 +235,7 @@ public class OutboxReconciliationService {
      */
     @Transactional(readOnly = true)
     public ReconciliationStats getStats() {
-        LocalDateTime cutoffTime = LocalDateTime.now().minusMinutes(lookbackMinutes);
+        LocalDateTime cutoffTime = LocalDateTime.now(clock).minusMinutes(lookbackMinutes);
         long totalDocuments = documentRepositoryPort.countByCreatedAtAfter(cutoffTime);
 
         // Use efficient aggregation query to count orphaned documents (no N+1)

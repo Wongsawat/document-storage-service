@@ -6,6 +6,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.mongodb.core.MongoTemplate;
 
+import java.time.Clock;
+
 /**
  * Configuration for outbox pattern support.
  * Uses MongoDB-based outbox repository for document-storage-service.
@@ -30,5 +32,19 @@ public class OutboxConfig {
     @Bean
     public OutboxEventRepository outboxEventRepository(MongoTemplate mongoTemplate) {
         return new MongoOutboxEventAdapter(mongoTemplate);
+    }
+
+    /**
+     * Provides a system clock for time-based operations.
+     * <p>
+     * Injected into services like {@link com.wpanther.storage.infrastructure.adapter.in.scheduler.OutboxReconciliationService}
+     * to enable deterministic time-based testing using {@link Clock#fixed(Instant, ZoneId)}.
+     * </p>
+     *
+     * @return system UTC clock
+     */
+    @Bean
+    public Clock clock() {
+        return Clock.systemUTC();
     }
 }
