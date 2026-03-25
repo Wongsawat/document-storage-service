@@ -120,12 +120,8 @@ public class JwtService {
     public boolean isTokenExpired(String token) {
         try {
             return extractExpiration(token).before(Date.from(Instant.now()));
-        } catch (SecurityException e) {
-            // If we can't parse the token (e.g., expired), check if it's an expired token exception
-            if (e.getCause() instanceof ExpiredJwtException) {
-                return true;
-            }
-            throw e;
+        } catch (ExpiredJwtException e) {
+            return true;
         }
     }
 
@@ -164,6 +160,8 @@ public class JwtService {
                     .build()
                     .parseSignedClaims(token)
                     .getPayload();
+        } catch (ExpiredJwtException e) {
+            throw e; // Let expiration propagate without wrapping
         } catch (Exception e) {
             log.error("Failed to parse JWT token: {}", e.getMessage());
             throw new SecurityException("Invalid JWT token", "INVALID_JWT", e);
