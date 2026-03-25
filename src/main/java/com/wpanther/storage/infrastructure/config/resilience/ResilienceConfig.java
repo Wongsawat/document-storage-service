@@ -32,6 +32,11 @@ import java.time.Duration;
  *   <li><b>Time Limiter:</b> Enforces timeout limits on external calls</li>
  * </ul>
  * </p>
+ * <p>
+ * <b>Monitoring:</b>
+ * Retry and circuit breaker state is exposed at /actuator/resilience4j for monitoring.
+ * Metrics are exported to Prometheus via Micrometer when management.metrics.export.prometheus.enabled is true.
+ * </p>
  */
 @Configuration
 @Slf4j
@@ -98,6 +103,10 @@ public class ResilienceConfig {
      *   <li>Wait duration: 500ms between retries</li>
      *   <li>Exponential backoff enabled</li>
      * </ul>
+     * </p>
+     * <p>
+     * Retry metrics are automatically exported via resilience4j-micrometer integration
+     * and available at /actuator/resilience4j.
      * </p>
      */
     @Bean

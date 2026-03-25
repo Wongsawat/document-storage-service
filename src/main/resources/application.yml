@@ -157,7 +157,7 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info,metrics,prometheus,camelroutes
+        include: health,info,metrics,prometheus,camelroutes,resilience4j
   endpoint:
     health:
       show-details: always

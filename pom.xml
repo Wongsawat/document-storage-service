@@ -240,6 +240,10 @@
             <groupId>io.github.resilience4j</groupId>
             <artifactId>resilience4j-timelimiter</artifactId>
         </dependency>
+        <dependency>
+            <groupId>io.github.resilience4j</groupId>
+            <artifactId>resilience4j-micrometer</artifactId>
+        </dependency>
         <!-- OpenTelemetry for distributed tracing -->
         <dependency>
             <groupId>io.micrometer</groupId>
