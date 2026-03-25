@@ -68,7 +68,7 @@ public class FileStorageDomainService implements DocumentStorageUseCase {
                 .contentType(contentType != null ? contentType : ContentTypeUtil.determineContentType(filename))
                 .storagePath(result.location())
                 .storageUrl(result.location())
-                .fileSize(content.length)
+                .fileSize((long) content.length)
                 .checksum(checksum)
                 .createdAt(LocalDateTime.now())
                 .build();

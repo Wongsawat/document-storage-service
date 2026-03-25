@@ -141,7 +141,7 @@ class FileStorageDomainServiceTest {
                 .contentType("application/pdf")
                 .storagePath("/path/to/doc")
                 .storageUrl("http://example.com/doc")
-                .fileSize(1024)
+                .fileSize((long)1024)
                 .checksum("abc123")
                 .createdAt(LocalDateTime.now())
                 .build();
@@ -188,7 +188,7 @@ class FileStorageDomainServiceTest {
                     .contentType("application/pdf")
                     .storagePath("/path/doc1")
                     .storageUrl("http://example.com/doc1")
-                    .fileSize(1024)
+                    .fileSize((long)1024)
                     .checksum("abc1")
                     .build(),
                 StoredDocument.builder()
@@ -199,7 +199,7 @@ class FileStorageDomainServiceTest {
                     .contentType("application/xml")
                     .storagePath("/path/doc2")
                     .storageUrl("http://example.com/doc2")
-                    .fileSize(512)
+                    .fileSize((long)512)
                     .checksum("abc2")
                     .build()
             );
@@ -244,7 +244,7 @@ class FileStorageDomainServiceTest {
                 .contentType("application/pdf")
                 .storagePath(storagePath)
                 .storageUrl("http://example.com/doc")
-                .fileSize(1024)
+                .fileSize((long)1024)
                 .checksum("abc123")
                 .build();
             when(documentRepository.findById(documentId)).thenReturn(Optional.of(doc));
@@ -325,7 +325,7 @@ class FileStorageDomainServiceTest {
                 .contentType("application/pdf")
                 .storagePath(storagePath)
                 .storageUrl("http://example.com/doc")
-                .fileSize(expectedContent.length)
+                .fileSize((long)expectedContent.length)
                 .checksum("abc123")
                 .build();
 
@@ -367,7 +367,7 @@ class FileStorageDomainServiceTest {
                 .contentType("application/pdf")
                 .storagePath(storagePath)
                 .storageUrl("http://example.com/doc")
-                .fileSize(1024)
+                .fileSize((long)1024)
                 .checksum("abc123")
                 .build();
 

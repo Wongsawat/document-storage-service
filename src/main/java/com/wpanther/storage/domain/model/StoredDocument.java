@@ -21,7 +21,7 @@ public class StoredDocument {
     // Storage Information
     private final String storagePath;
     private final String storageUrl;
-    private final long fileSize;
+    private final Long fileSize;
     private final String checksum;
 
     // Document Classification
@@ -60,7 +60,7 @@ public class StoredDocument {
             throw new IllegalStateException("File name cannot be blank");
         }
 
-        if (fileSize <= 0) {
+        if (fileSize == null || fileSize <= 0) {
             throw new IllegalArgumentException("File size must be positive");
         }
 
@@ -111,7 +111,7 @@ public class StoredDocument {
         return storageUrl;
     }
 
-    public long getFileSize() {
+    public Long getFileSize() {
         return fileSize;
     }
 
@@ -148,7 +148,7 @@ public class StoredDocument {
         private String contentType;
         private String storagePath;
         private String storageUrl;
-        private long fileSize;
+        private Long fileSize;
         private String checksum;
         private DocumentType documentType;
         private LocalDateTime createdAt;
@@ -181,7 +181,7 @@ public class StoredDocument {
             return this;
         }
 
-        public Builder fileSize(long fileSize) {
+        public Builder fileSize(Long fileSize) {
             this.fileSize = fileSize;
             return this;
         }

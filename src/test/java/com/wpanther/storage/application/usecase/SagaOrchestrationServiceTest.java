@@ -76,7 +76,7 @@ class SagaOrchestrationServiceTest {
                 .contentType("application/pdf")
                 .storagePath("/2024/03/05/stored-123.pdf")
                 .storageUrl("http://localhost:8084/api/v1/documents/stored-123")
-                .fileSize(pdfContent.length)
+                .fileSize((long)pdfContent.length)
                 .checksum("abc123")
                 .documentType(DocumentType.INVOICE_PDF)
                 .build();
@@ -164,7 +164,7 @@ class SagaOrchestrationServiceTest {
                 .contentType("application/xml")
                 .storagePath("/2024/03/05/stored-456.xml")
                 .storageUrl("http://localhost:8084/api/v1/documents/stored-456")
-                .fileSize(xmlBytes.length)
+                .fileSize((long)xmlBytes.length)
                 .checksum("xyz789")
                 .documentType(DocumentType.SIGNED_XML)
                 .build();
@@ -246,7 +246,7 @@ class SagaOrchestrationServiceTest {
                 .contentType("application/pdf")
                 .storagePath("/2024/03/05/stored-789.pdf")
                 .storageUrl("http://localhost:8084/api/v1/documents/stored-789")
-                .fileSize(pdfContent.length)
+                .fileSize((long)pdfContent.length)
                 .checksum("def456")
                 .documentType(DocumentType.UNSIGNED_PDF)
                 .build();
@@ -284,7 +284,7 @@ class SagaOrchestrationServiceTest {
                 .contentType("application/pdf")
                 .storagePath("/2024/03/05/existing-789.pdf")
                 .storageUrl("http://localhost:8084/api/v1/documents/existing-789")
-                .fileSize(1024)
+                .fileSize((long)1024)
                 .checksum("aaa111")
                 .documentType(DocumentType.UNSIGNED_PDF)
                 .build();
@@ -324,7 +324,7 @@ class SagaOrchestrationServiceTest {
                 .contentType("application/pdf")
                 .storagePath("/path/file1.pdf")
                 .storageUrl("http://localhost:8084/api/v1/documents/doc-1")
-                .fileSize(1024)
+                .fileSize((long)1024)
                 .checksum("aaa111")
                 .documentType(DocumentType.INVOICE_PDF)
                 .build();
@@ -335,7 +335,7 @@ class SagaOrchestrationServiceTest {
                 .contentType("application/xml")
                 .storagePath("/path/file2.xml")
                 .storageUrl("http://localhost:8084/api/v1/documents/doc-2")
-                .fileSize(512)
+                .fileSize((long)512)
                 .checksum("bbb222")
                 .documentType(DocumentType.SIGNED_XML)
                 .build();
@@ -381,7 +381,7 @@ class SagaOrchestrationServiceTest {
                 .contentType("application/pdf")
                 .storagePath("/path/file1.pdf")
                 .storageUrl("http://localhost:8084/api/v1/documents/doc-1")
-                .fileSize(1024)
+                .fileSize((long)1024)
                 .checksum("aaa111")
                 .documentType(DocumentType.INVOICE_PDF)
                 .build();
@@ -392,7 +392,7 @@ class SagaOrchestrationServiceTest {
                 .contentType("application/xml")
                 .storagePath("/path/file2.xml")
                 .storageUrl("http://localhost:8084/api/v1/documents/doc-2")
-                .fileSize(512)
+                .fileSize((long)512)
                 .checksum("bbb222")
                 .documentType(DocumentType.SIGNED_XML)
                 .build();
@@ -428,7 +428,7 @@ class SagaOrchestrationServiceTest {
                 .contentType("application/xml")
                 .storagePath("/path/signed.xml")
                 .storageUrl("http://localhost:8084/api/v1/documents/xml-doc-1")
-                .fileSize(256)
+                .fileSize((long)256)
                 .checksum("ccc333")
                 .documentType(DocumentType.SIGNED_XML)
                 .build();
@@ -457,7 +457,7 @@ class SagaOrchestrationServiceTest {
                 .contentType("application/pdf")
                 .storagePath("/path/file.pdf")
                 .storageUrl("http://localhost:8084/api/v1/documents/pdf-doc-1")
-                .fileSize(1024)
+                .fileSize((long)1024)
                 .checksum("ddd444")
                 .documentType(DocumentType.INVOICE_PDF)
                 .build();
@@ -490,7 +490,7 @@ class SagaOrchestrationServiceTest {
                 .contentType("application/pdf")
                 .storagePath("/path/unsigned.pdf")
                 .storageUrl("http://localhost:8084/api/v1/documents/pdf-doc-1")
-                .fileSize(512)
+                .fileSize((long)512)
                 .checksum("eee555")
                 .documentType(DocumentType.UNSIGNED_PDF)
                 .build();
@@ -519,7 +519,7 @@ class SagaOrchestrationServiceTest {
                 .contentType("application/pdf")
                 .storagePath("/path/signed.pdf")
                 .storageUrl("http://localhost:8084/api/v1/documents/pdf-doc-1")
-                .fileSize(1024)
+                .fileSize((long)1024)
                 .checksum("fff666")
                 .documentType(DocumentType.INVOICE_PDF)
                 .build();
