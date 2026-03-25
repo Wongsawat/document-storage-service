@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.wpanther.saga.domain.enums.SagaStep;
+import com.wpanther.saga.domain.model.TraceEvent;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -52,6 +53,22 @@ class DocumentStoredEventTest {
             assertEquals(checksum, event.getChecksum());
             assertEquals(documentType, event.getDocumentType());
             assertEquals(correlationId, event.getCorrelationId());
+        }
+
+        @Test
+        @DisplayName("Polymorphic TraceEvent accessor should return correlationId")
+        void getCorrelationId_polymorphicAccessorShouldReturnProvidedValue() {
+            // Arrange
+            DocumentStoredEvent event = new DocumentStoredEvent(
+                    "doc-123", "inv-001", "INV-001",
+                    "invoice.pdf", "http://localhost/doc.pdf", 12345L,
+                    "abc123checksum", "TAX_INVOICE", "corr-abc");
+
+            // Act — call via polymorphic TraceEvent reference
+            TraceEvent traceEvent = event;
+
+            // Assert
+            assertEquals("corr-abc", traceEvent.getCorrelationId());
         }
 
         @Test

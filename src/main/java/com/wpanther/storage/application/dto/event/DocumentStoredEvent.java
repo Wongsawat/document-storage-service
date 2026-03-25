@@ -44,13 +44,10 @@ public class DocumentStoredEvent extends TraceEvent {
     @JsonProperty("documentType")
     private final String documentType;
 
-    @JsonProperty("correlationId")
-    private final String correlationId;
-
     public DocumentStoredEvent(String documentId, String invoiceId, String invoiceNumber,
                                 String fileName, String storageUrl, long fileSize,
                                 String checksum, String documentType, String correlationId) {
-        super(invoiceId, SOURCE, TRACE_TYPE);
+        super(invoiceId, correlationId, SOURCE, TRACE_TYPE, null);
         this.documentId = documentId;
         this.invoiceId = invoiceId;
         this.invoiceNumber = invoiceNumber;
@@ -59,7 +56,6 @@ public class DocumentStoredEvent extends TraceEvent {
         this.fileSize = fileSize;
         this.checksum = checksum;
         this.documentType = documentType;
-        this.correlationId = correlationId;
     }
 
     @Override
@@ -74,6 +70,7 @@ public class DocumentStoredEvent extends TraceEvent {
             @JsonProperty("eventType") String eventType,
             @JsonProperty("version") int version,
             @JsonProperty("sagaId") String sagaId,
+            @JsonProperty("correlationId") String correlationId,
             @JsonProperty("source") String source,
             @JsonProperty("traceType") String traceType,
             @JsonProperty("context") String context,
@@ -84,9 +81,8 @@ public class DocumentStoredEvent extends TraceEvent {
             @JsonProperty("storageUrl") String storageUrl,
             @JsonProperty("fileSize") long fileSize,
             @JsonProperty("checksum") String checksum,
-            @JsonProperty("documentType") String documentType,
-            @JsonProperty("correlationId") String correlationId) {
-        super(eventId, occurredAt, eventType, version, sagaId, source, traceType, context);
+            @JsonProperty("documentType") String documentType) {
+        super(eventId, occurredAt, eventType, version, sagaId, correlationId, source, traceType, context);
         this.documentId = documentId;
         this.invoiceId = invoiceId;
         this.invoiceNumber = invoiceNumber;
@@ -95,6 +91,5 @@ public class DocumentStoredEvent extends TraceEvent {
         this.fileSize = fileSize;
         this.checksum = checksum;
         this.documentType = documentType;
-        this.correlationId = correlationId;
     }
 }
