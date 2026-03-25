@@ -76,7 +76,7 @@ public class OutboxReconciliationService {
             int orphanedCount = 0;
 
             for (StoredDocument doc : recentDocuments) {
-                if (!hasOutboxEvent(doc.getId())) {
+                if (!hasAnyOutboxEvent(doc.getId())) {
                     log.warn("Found orphaned document: id={}, type={}, createdAt={}",
                             doc.getId(), doc.getDocumentType(), doc.getCreatedAt());
 
@@ -133,19 +133,6 @@ public class OutboxReconciliationService {
         } catch (Exception e) {
             log.error("Error during cleanup", e);
         }
-    }
-
-    /**
-     * Check if a document has a corresponding DocumentStoredEvent.
-     *
-     * @param documentId the document ID to check
-     * @return true if outbox event exists, false otherwise
-     */
-    private boolean hasOutboxEvent(String documentId) {
-        return outboxRepository.existsByAggregateIdAndEventType(
-                documentId,
-                "DocumentStoredEvent"
-        );
     }
 
     /**
@@ -237,7 +224,7 @@ public class OutboxReconciliationService {
         List<StoredDocument> documents = documentRepositoryPort.findByCreatedAtAfter(cutoffTime);
 
         for (StoredDocument doc : documents) {
-            if (!hasOutboxEvent(doc.getId())) {
+            if (!hasAnyOutboxEvent(doc.getId())) {
                 orphanedCount++;
             }
         }
