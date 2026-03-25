@@ -157,7 +157,7 @@ public class RateLimitingFilter extends OncePerRequestFilter {
             response.getWriter().write(String.format("{\"error\": \"%s\", \"retryAfter\": %d}",
                     RATE_LIMIT_EXCEEDED, retryAfter));
         } catch (IOException e) {
-            log.error("Failed to send rate limit response", e);
+            throw new ServletException("Failed to send rate limit response", e);
         }
     }
 
