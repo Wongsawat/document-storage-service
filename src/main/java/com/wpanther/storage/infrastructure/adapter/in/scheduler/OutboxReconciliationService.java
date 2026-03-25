@@ -1,5 +1,7 @@
 package com.wpanther.storage.infrastructure.adapter.in.scheduler;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.wpanther.saga.domain.outbox.OutboxStatus;
 import com.wpanther.storage.domain.repository.DocumentRepositoryPort;
 import com.wpanther.storage.domain.model.StoredDocument;
@@ -13,6 +15,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -39,6 +42,7 @@ public class OutboxReconciliationService {
     private final DocumentRepositoryPort documentRepositoryPort;
     private final SpringDataOutboxRepository outboxRepository;
     private final DocumentStorageMetricsService metrics;
+    private final ObjectMapper objectMapper;
 
     @Value("${app.reconciliation.batch-size:100}")
     private int batchSize;
@@ -190,25 +194,33 @@ public class OutboxReconciliationService {
      * @return JSON payload string
      */
     private String formatOrphanedEventPayload(StoredDocument document, String invoiceId) {
-        String safeInvoiceId = invoiceId != null ? invoiceId : "unknown";
-        return String.format("""
-                {
-                    "documentId": "%s",
-                    "invoiceId": "%s",
-                    "documentType": "%s",
-                    "storageUrl": "%s",
-                    "createdAt": "%s",
-                    "orphanedAt": "%s"
-                }
-                """,
-                document.getId(),
-                safeInvoiceId,
-                document.getDocumentType(),
-                document.getStorageUrl(),
-                document.getCreatedAt(),
-                java.time.Instant.now()
+        OrphanedDocumentPayload payload = new OrphanedDocumentPayload(
+            document.getId(),
+            invoiceId,
+            document.getDocumentType().name(),
+            document.getStorageUrl(),
+            document.getCreatedAt().toString(),
+            Instant.now().toString()
         );
+        try {
+            return objectMapper.writeValueAsString(payload);
+        } catch (JsonProcessingException e) {
+            log.error("Failed to serialize orphaned document payload", e);
+            throw new RuntimeException("Failed to serialize orphaned document payload", e);
+        }
     }
+
+    /**
+     * Payload record for orphaned document events.
+     */
+    private record OrphanedDocumentPayload(
+        String documentId,
+        String invoiceId,
+        String documentType,
+        String storageUrl,
+        String createdAt,
+        String orphanedAt
+    ) {}
 
     /**
      * Get reconciliation statistics.
