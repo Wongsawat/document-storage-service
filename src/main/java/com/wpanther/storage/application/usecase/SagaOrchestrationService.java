@@ -187,8 +187,8 @@ public class SagaOrchestrationService implements SagaCommandUseCase {
 
             // 3. Verify size matches expected
             if (content.length != command.getPdfSize()) {
-                log.warn("Downloaded PDF size {} does not match expected {}",
-                         content.length, command.getPdfSize());
+                throw new StorageFailedException(
+                    "Downloaded PDF size " + content.length + " does not match expected " + command.getPdfSize());
             }
 
             // 4. Store as UNSIGNED_PDF

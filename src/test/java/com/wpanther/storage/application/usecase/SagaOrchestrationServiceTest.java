@@ -254,7 +254,7 @@ class SagaOrchestrationServiceTest {
             ProcessPdfStorageCommand command = new ProcessPdfStorageCommand(
                 "saga-789", SagaStep.PDF_STORAGE, "corr-789",
                 documentId, "INV-2024-001", "INVOICE_PDF",
-                "http://minio:9000/unsigned.pdf", 1024L
+                "http://minio:9000/unsigned.pdf", (long) pdfContent.length
             );
 
             when(storageService.existsByInvoiceAndType(documentId, DocumentType.UNSIGNED_PDF)).thenReturn(false);
