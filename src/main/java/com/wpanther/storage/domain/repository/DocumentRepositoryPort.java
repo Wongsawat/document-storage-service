@@ -122,4 +122,16 @@ public interface DocumentRepositoryPort {
      * @return count of documents created after the timestamp
      */
     long countByCreatedAtAfter(java.time.LocalDateTime timestamp);
+
+    /**
+     * Count orphaned documents (documents without any outbox event) created after a timestamp.
+     * <p>
+     * Uses MongoDB aggregation with $lookup to efficiently join documents with outbox_events
+     * in a single query, avoiding N+1 query performance issues.
+     * </p>
+     *
+     * @param timestamp the cutoff timestamp
+     * @return count of orphaned documents created after the timestamp
+     */
+    long countOrphanedDocumentsAfter(java.time.LocalDateTime timestamp);
 }

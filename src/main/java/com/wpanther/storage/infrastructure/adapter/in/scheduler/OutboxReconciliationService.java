@@ -232,14 +232,8 @@ public class OutboxReconciliationService {
         LocalDateTime cutoffTime = LocalDateTime.now().minusMinutes(lookbackMinutes);
         long totalDocuments = documentRepositoryPort.countByCreatedAtAfter(cutoffTime);
 
-        long orphanedCount = 0;
-        List<StoredDocument> documents = documentRepositoryPort.findByCreatedAtAfter(cutoffTime);
-
-        for (StoredDocument doc : documents) {
-            if (!hasAnyOutboxEvent(doc.getId())) {
-                orphanedCount++;
-            }
-        }
+        // Use efficient aggregation query to count orphaned documents (no N+1)
+        long orphanedCount = documentRepositoryPort.countOrphanedDocumentsAfter(cutoffTime);
 
         return new ReconciliationStats(totalDocuments, orphanedCount);
     }

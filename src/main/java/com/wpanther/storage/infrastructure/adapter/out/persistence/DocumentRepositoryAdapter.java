@@ -4,6 +4,11 @@ import com.wpanther.storage.domain.model.DocumentType;
 import com.wpanther.storage.domain.model.StoredDocument;
 import com.wpanther.storage.domain.repository.DocumentRepositoryPort;
 import lombok.RequiredArgsConstructor;
+import org.bson.Document;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.aggregation.Aggregation;
+import org.springframework.data.mongodb.core.aggregation.AggregationResults;
+import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
@@ -24,6 +29,7 @@ public class DocumentRepositoryAdapter implements DocumentRepositoryPort {
 
     private final MongoDocumentAdapter mongoDocumentAdapter;
     private final StoredDocumentMapper documentMapper;
+    private final MongoTemplate mongoTemplate;
 
     @Override
     public StoredDocument save(StoredDocument document) {
@@ -79,5 +85,24 @@ public class DocumentRepositoryAdapter implements DocumentRepositoryPort {
     @Override
     public long countByCreatedAtAfter(LocalDateTime timestamp) {
         return mongoDocumentAdapter.countByCreatedAtAfter(timestamp);
+    }
+
+    @Override
+    public long countOrphanedDocumentsAfter(LocalDateTime timestamp) {
+        // Use MongoDB aggregation with $lookup to find documents without outbox events
+        // This avoids N+1 queries by joining documents with outbox_events in a single query
+        Aggregation aggregation = Aggregation.newAggregation(
+            Aggregation.match(Criteria.where("createdAt").gt(timestamp)),
+            Aggregation.lookup("outbox_events", "_id", "aggregateId", "outboxMatches"),
+            Aggregation.match(Criteria.where("outboxMatches").size(0)),
+            Aggregation.count().as("count")
+        );
+
+        AggregationResults<Document> results = mongoTemplate.aggregate(
+            aggregation, "stored_documents", Document.class
+        );
+
+        Document result = results.getUniqueMappedResult();
+        return result != null ? result.getInteger("count", 0) : 0;
     }
 }
