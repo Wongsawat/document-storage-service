@@ -59,7 +59,7 @@ public class DocumentStorageController {
     public ResponseEntity<Map<String, Object>> uploadDocument(
         @Parameter(description = "Document file to upload", required = true, schema = @Schema(type = "string", format = "binary"))
         @RequestParam("file") MultipartFile file,
-        @Parameter(description = "Document type categorization", schema = @Schema(implementation = DocumentType.class))
+        @Parameter(description = "Document type categorization")
         @RequestParam(value = "documentType", required = false, defaultValue = "OTHER") DocumentType documentType,
         @Parameter(description = "Associated invoice ID (1-100 alphanumeric characters)")
         @RequestParam(value = "invoiceId", required = false) String invoiceId,
