@@ -19,7 +19,6 @@ import java.util.UUID;
  * Bridges between domain OutboxEvent and JPA OutboxEventEntity.
  */
 @Component
-@Primary
 public class JpaOutboxEventRepository implements OutboxEventRepository {
 
     private static final Logger log = LoggerFactory.getLogger(JpaOutboxEventRepository.class);

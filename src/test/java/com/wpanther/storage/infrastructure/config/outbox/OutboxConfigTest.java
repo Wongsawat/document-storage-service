@@ -57,17 +57,17 @@ class OutboxConfigTest {
         }
 
         @Test
-        @DisplayName("Should have ConditionalOnMissingBean on outboxEventRepository")
-        void shouldHaveConditionalOnMissingBean() {
+        @DisplayName("Should not have ConditionalOnMissingBean - always use MongoDB outbox for transactions")
+        void shouldNotHaveConditionalOnMissingBean() {
             assertDoesNotThrow(() -> {
                 var outboxBean = OutboxConfig.class.getDeclaredMethod("outboxEventRepository", MongoTemplate.class);
                 var conditional = outboxBean.getAnnotation(
                     org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean.class
                 );
 
-                assertNotNull(conditional);
-                assertEquals(1, conditional.value().length);
-                assertEquals(OutboxEventRepository.class, conditional.value()[0]);
+                // MongoDB outbox is always used for transactional consistency between
+                // document storage and outbox events
+                assertNull(conditional);
             });
         }
     }
