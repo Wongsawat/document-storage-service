@@ -263,7 +263,7 @@ public class DocumentStorageMetricsService {
      */
     public double getPdfDownloadSuccessRate() {
         double total = pdfDownloadSuccessCounter.count() + pdfDownloadFailureCounter.count();
-        return total > 0 ? (pdfDownloadSuccessCounter.count() / total) * 100 : 0;
+        return total > 0 ? (pdfDownloadSuccessCounter.count() / (double) total) * 100 : 0;
     }
 
     // ========== Orphaned Document Metrics ==========
