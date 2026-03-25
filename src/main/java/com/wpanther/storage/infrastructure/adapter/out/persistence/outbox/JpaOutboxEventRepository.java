@@ -3,9 +3,9 @@ package com.wpanther.storage.infrastructure.adapter.out.persistence.outbox;
 import com.wpanther.saga.domain.outbox.OutboxEvent;
 import com.wpanther.saga.domain.outbox.OutboxEventRepository;
 import com.wpanther.saga.domain.outbox.OutboxStatus;
+import com.wpanther.storage.application.port.out.OutboxRepositoryPort;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.context.annotation.Primary;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
 
@@ -17,9 +17,13 @@ import java.util.UUID;
 /**
  * JPA implementation of saga-commons OutboxEventRepository interface.
  * Bridges between domain OutboxEvent and JPA OutboxEventEntity.
+ * <p>
+ * Also implements {@link OutboxRepositoryPort} to provide outbox monitoring
+ * capabilities for health indicators.
+ * </p>
  */
 @Component
-public class JpaOutboxEventRepository implements OutboxEventRepository {
+public class JpaOutboxEventRepository implements OutboxEventRepository, OutboxRepositoryPort {
 
     private static final Logger log = LoggerFactory.getLogger(JpaOutboxEventRepository.class);
 
@@ -80,5 +84,10 @@ public class JpaOutboxEventRepository implements OutboxEventRepository {
                 ).stream()
                 .map(OutboxEventEntity::toDomain)
                 .toList();
+    }
+
+    @Override
+    public void deleteById(String id) {
+        springRepository.deleteById(UUID.fromString(id));
     }
 }

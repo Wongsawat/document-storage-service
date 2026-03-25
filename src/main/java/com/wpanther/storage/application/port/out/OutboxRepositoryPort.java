@@ -2,6 +2,8 @@ package com.wpanther.storage.application.port.out;
 
 import com.wpanther.saga.domain.outbox.OutboxEvent;
 
+import java.util.List;
+
 /**
  * Outbound port for outbox event persistence.
  * <p>
@@ -49,4 +51,26 @@ public interface OutboxRepositoryPort {
      * @param id the unique outbox event identifier
      */
     void deleteById(String id);
+
+    /**
+     * Find pending outbox events for processing.
+     * <p>
+     * Used by health indicators and monitoring to check outbox lag.
+     * </p>
+     *
+     * @param limit maximum number of events to return
+     * @return list of pending outbox events
+     */
+    List<OutboxEvent> findPendingEvents(int limit);
+
+    /**
+     * Find failed outbox events for retry or alerting.
+     * <p>
+     * Used by health indicators and monitoring to check for failures.
+     * </p>
+     *
+     * @param limit maximum number of events to return
+     * @return list of failed outbox events
+     */
+    List<OutboxEvent> findFailedEvents(int limit);
 }

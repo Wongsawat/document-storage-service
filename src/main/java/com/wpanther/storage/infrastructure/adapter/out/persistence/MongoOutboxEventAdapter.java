@@ -3,13 +3,13 @@ package com.wpanther.storage.infrastructure.adapter.out.persistence;
 import com.wpanther.saga.domain.outbox.OutboxEvent;
 import com.wpanther.saga.domain.outbox.OutboxEventRepository;
 import com.wpanther.saga.domain.outbox.OutboxStatus;
+import com.wpanther.storage.application.port.out.OutboxRepositoryPort;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
-import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.stereotype.Repository;
 
 import java.time.Instant;
@@ -20,11 +20,15 @@ import java.util.UUID;
 /**
  * MongoDB implementation of the OutboxEventRepository.
  * Provides outbox pattern support for MongoDB-based services.
+ * <p>
+ * Also implements {@link OutboxRepositoryPort} to provide outbox monitoring
+ * capabilities for health indicators.
+ * </p>
  */
 @Repository
 @RequiredArgsConstructor
 @Slf4j
-public class MongoOutboxEventAdapter implements OutboxEventRepository {
+public class MongoOutboxEventAdapter implements OutboxEventRepository, OutboxRepositoryPort {
 
     private static final String COLLECTION = "outbox_events";
 
@@ -76,5 +80,11 @@ public class MongoOutboxEventAdapter implements OutboxEventRepository {
                 .and("aggregateId").is(aggregateId))
                 .with(Sort.by(Sort.Direction.ASC, "createdAt"));
         return mongoTemplate.find(query, OutboxEvent.class, COLLECTION);
+    }
+
+    @Override
+    public void deleteById(String id) {
+        Query query = new Query(Criteria.where("id").is(UUID.fromString(id)));
+        mongoTemplate.remove(query, OutboxEvent.class, COLLECTION);
     }
 }
