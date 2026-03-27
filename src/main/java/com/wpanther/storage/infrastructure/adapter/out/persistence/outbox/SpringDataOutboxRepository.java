@@ -9,6 +9,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.Instant;
+import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
 
@@ -39,4 +40,14 @@ public interface SpringDataOutboxRepository extends JpaRepository<OutboxEventEnt
      */
     @Query("SELECT CASE WHEN COUNT(e) > 0 THEN true ELSE false END FROM OutboxEventEntity e WHERE e.aggregateId = :aggregateId")
     boolean existsByAggregateId(@Param("aggregateId") String aggregateId);
+
+    /**
+     * Find all distinct aggregate IDs that have at least one outbox event.
+     * Used for batch orphan detection to avoid N+1 queries.
+     *
+     * @param aggregateIds the aggregate IDs to check
+     * @return subset of aggregateIds that have at least one outbox event
+     */
+    @Query("SELECT DISTINCT e.aggregateId FROM OutboxEventEntity e WHERE e.aggregateId IN :aggregateIds")
+    List<String> findExistingAggregateIds(@Param("aggregateIds") Collection<String> aggregateIds);
 }

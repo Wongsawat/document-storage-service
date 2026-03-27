@@ -18,7 +18,9 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDateTime;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Reconciliation service for detecting and handling orphaned documents.
@@ -83,10 +85,19 @@ public class OutboxReconciliationService {
             LocalDateTime cutoffTime = LocalDateTime.now(clock).minusMinutes(lookbackMinutes);
             List<StoredDocument> recentDocuments = documentRepositoryPort.findByCreatedAtAfter(cutoffTime);
 
+            if (recentDocuments.isEmpty()) {
+                log.info("No recent documents to reconcile");
+                metrics.recordReconciliationRun(0);
+                return;
+            }
+
+            // Batch query: single SQL instead of N individual queries
+            Set<String> idsWithOutbox = findIdsWithOutboxEvents(recentDocuments);
+
             int orphanedCount = 0;
 
             for (StoredDocument doc : recentDocuments) {
-                if (!hasAnyOutboxEvent(doc.getId())) {
+                if (!idsWithOutbox.contains(doc.getId())) {
                     log.warn("Found orphaned document: id={}, type={}, createdAt={}",
                             doc.getId(), doc.getDocumentType(), doc.getCreatedAt());
 
@@ -127,10 +138,18 @@ public class OutboxReconciliationService {
             LocalDateTime cutoffTime = LocalDateTime.now(clock).minusDays(retentionDays);
             List<StoredDocument> oldDocuments = documentRepositoryPort.findByCreatedAtBefore(cutoffTime);
 
+            if (oldDocuments.isEmpty()) {
+                log.info("No old documents to clean up");
+                return;
+            }
+
+            // Batch query: single SQL instead of N individual queries
+            Set<String> idsWithOutbox = findIdsWithOutboxEvents(oldDocuments);
+
             int deletedCount = 0;
 
             for (StoredDocument doc : oldDocuments) {
-                if (!hasAnyOutboxEvent(doc.getId())) {
+                if (!idsWithOutbox.contains(doc.getId())) {
                     documentRepositoryPort.deleteById(doc.getId());
                     deletedCount++;
                     log.warn("Deleted old orphaned document: id={}, createdAt={}",
@@ -146,13 +165,17 @@ public class OutboxReconciliationService {
     }
 
     /**
-     * Check if a document has any outbox event at all.
+     * Batch query to find which document IDs already have outbox events.
+     * Replaces N individual {@code existsByAggregateId()} calls with a single query.
      *
-     * @param documentId the document ID to check
-     * @return true if any outbox event exists, false otherwise
+     * @param documents the documents to check
+     * @return set of document IDs that have at least one outbox event
      */
-    private boolean hasAnyOutboxEvent(String documentId) {
-        return outboxRepository.existsByAggregateId(documentId);
+    private Set<String> findIdsWithOutboxEvents(List<StoredDocument> documents) {
+        List<String> documentIds = documents.stream()
+            .map(StoredDocument::getId)
+            .toList();
+        return new HashSet<>(outboxRepository.findExistingAggregateIds(documentIds));
     }
 
     /**
