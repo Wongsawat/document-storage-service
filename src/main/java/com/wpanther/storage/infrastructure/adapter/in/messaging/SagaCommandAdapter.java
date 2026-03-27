@@ -1,5 +1,6 @@
 package com.wpanther.storage.infrastructure.adapter.in.messaging;
 
+import com.wpanther.saga.domain.model.SagaCommand;
 import com.wpanther.storage.application.dto.event.*;
 import com.wpanther.storage.application.usecase.SagaCommandUseCase;
 import lombok.extern.slf4j.Slf4j;
@@ -86,127 +87,67 @@ public class SagaCommandAdapter extends RouteBuilder {
         // ========================================
         // STORE_DOCUMENT saga step routes
         // ========================================
+        defineSagaRoute(sagaCommandTopic, "document-storage-store-document",
+                "saga-document-storage-command", "saga command",
+                ProcessDocumentStorageCommand.class,
+                cmd -> sagaCommandUseCase.handleProcessCommand(cmd));
 
-        // Consume ProcessDocumentStorageCommand from orchestrator
-        from("kafka:" + sagaCommandTopic
-                + "?brokers=" + kafkaBrokers
-                + "&groupId=document-storage-store-document"  // Unique consumer group per step
-                + "&autoOffsetReset=" + autoOffsetReset
-                + "&autoCommitEnable=false"  // Manual commit for exactly-once
-                + "&maxPollRecords=" + maxPollRecords
-                + "&consumersCount=" + consumersCount)
-                .routeId("saga-document-storage-command")
-                .log("Received saga command: partition=${header[kafka.PARTITION]}, offset=${header[kafka.OFFSET]}")
-                .unmarshal().json(JsonLibrary.Jackson, ProcessDocumentStorageCommand.class)
-                .process(exchange -> {
-                    ProcessDocumentStorageCommand cmd = exchange.getIn().getBody(ProcessDocumentStorageCommand.class);
-                    log.info("Processing saga command for saga: {}, document: {}",
-                            cmd.getSagaId(), cmd.getDocumentId());
-                    sagaCommandUseCase.handleProcessCommand(cmd);
-                })
-                .log("Successfully processed saga command");
-
-        // Consume CompensateDocumentStorageCommand from orchestrator
-        from("kafka:" + sagaCompensationTopic
-                + "?brokers=" + kafkaBrokers
-                + "&groupId=document-storage-store-document-compensation"  // Unique consumer group
-                + "&autoOffsetReset=" + autoOffsetReset
-                + "&autoCommitEnable=false"
-                + "&maxPollRecords=" + maxPollRecords
-                + "&consumersCount=" + consumersCount)
-                .routeId("saga-document-storage-compensation")
-                .log("Received compensation command: partition=${header[kafka.PARTITION]}, offset=${header[kafka.OFFSET]}")
-                .unmarshal().json(JsonLibrary.Jackson, CompensateDocumentStorageCommand.class)
-                .process(exchange -> {
-                    CompensateDocumentStorageCommand cmd = exchange.getIn().getBody(CompensateDocumentStorageCommand.class);
-                    log.info("Processing compensation for saga: {}, document: {}",
-                            cmd.getSagaId(), cmd.getDocumentId());
-                    sagaCommandUseCase.handleCompensation(cmd);
-                })
-                .log("Successfully processed compensation command");
+        defineSagaRoute(sagaCompensationTopic, "document-storage-store-document-compensation",
+                "saga-document-storage-compensation", "compensation command",
+                CompensateDocumentStorageCommand.class,
+                cmd -> sagaCommandUseCase.handleCompensation(cmd));
 
         // ========================================
         // SIGNEDXML_STORAGE saga step routes
         // ========================================
+        defineSagaRoute(sagaCommandSignedXmlTopic, "document-storage-signedxml",
+                "saga-signedxml-storage-command", "signed XML storage command",
+                ProcessSignedXmlStorageCommand.class,
+                cmd -> sagaCommandUseCase.handleProcessCommand(cmd));
 
-        // Consume ProcessSignedXmlStorageCommand from orchestrator
-        from("kafka:" + sagaCommandSignedXmlTopic
-                + "?brokers=" + kafkaBrokers
-                + "&groupId=document-storage-signedxml"  // Unique consumer group per step
-                + "&autoOffsetReset=" + autoOffsetReset
-                + "&autoCommitEnable=false"
-                + "&maxPollRecords=" + maxPollRecords
-                + "&consumersCount=" + consumersCount)
-                .routeId("saga-signedxml-storage-command")
-                .log("Received signed XML storage command: partition=${header[kafka.PARTITION]}, offset=${header[kafka.OFFSET]}")
-                .unmarshal().json(JsonLibrary.Jackson, ProcessSignedXmlStorageCommand.class)
-                .process(exchange -> {
-                    ProcessSignedXmlStorageCommand cmd = exchange.getIn().getBody(ProcessSignedXmlStorageCommand.class);
-                    log.info("Processing signed XML storage command for saga: {}, document: {}",
-                            cmd.getSagaId(), cmd.getDocumentId());
-                    sagaCommandUseCase.handleProcessCommand(cmd);
-                })
-                .log("Successfully processed signed XML storage command");
-
-        // Consume CompensateSignedXmlStorageCommand from orchestrator
-        from("kafka:" + sagaCompensationSignedXmlTopic
-                + "?brokers=" + kafkaBrokers
-                + "&groupId=document-storage-signedxml-compensation"  // Unique consumer group
-                + "&autoOffsetReset=" + autoOffsetReset
-                + "&autoCommitEnable=false"
-                + "&maxPollRecords=" + maxPollRecords
-                + "&consumersCount=" + consumersCount)
-                .routeId("saga-signedxml-storage-compensation")
-                .log("Received signed XML compensation command: partition=${header[kafka.PARTITION]}, offset=${header[kafka.OFFSET]}")
-                .unmarshal().json(JsonLibrary.Jackson, CompensateSignedXmlStorageCommand.class)
-                .process(exchange -> {
-                    CompensateSignedXmlStorageCommand cmd = exchange.getIn().getBody(CompensateSignedXmlStorageCommand.class);
-                    log.info("Processing signed XML compensation for saga: {}, document: {}",
-                            cmd.getSagaId(), cmd.getDocumentId());
-                    sagaCommandUseCase.handleCompensation(cmd);
-                })
-                .log("Successfully processed signed XML compensation command");
+        defineSagaRoute(sagaCompensationSignedXmlTopic, "document-storage-signedxml-compensation",
+                "saga-signedxml-storage-compensation", "signed XML compensation command",
+                CompensateSignedXmlStorageCommand.class,
+                cmd -> sagaCommandUseCase.handleCompensation(cmd));
 
         // ========================================
         // PDF_STORAGE saga step routes
         // ========================================
+        defineSagaRoute(sagaCommandPdfStorageTopic, "document-storage-pdf",
+                "saga-pdf-storage-command", "PDF storage command",
+                ProcessPdfStorageCommand.class,
+                cmd -> sagaCommandUseCase.handleProcessCommand(cmd));
 
-        // Consume ProcessPdfStorageCommand from orchestrator (PDF_STORAGE step)
-        from("kafka:" + sagaCommandPdfStorageTopic
+        defineSagaRoute(sagaCompensationPdfStorageTopic, "document-storage-pdf-compensation",
+                "saga-pdf-storage-compensation", "PDF compensation command",
+                CompensatePdfStorageCommand.class,
+                cmd -> sagaCommandUseCase.handleCompensation(cmd));
+    }
+
+    @FunctionalInterface
+    private interface SagaCommandHandler<T extends SagaCommand> {
+        void handle(T command);
+    }
+
+    private <T extends SagaCommand> void defineSagaRoute(String topic, String groupId,
+                                                         String routeId, String logLabel,
+                                                         Class<T> commandClass,
+                                                         SagaCommandHandler<T> handler) {
+        from("kafka:" + topic
                 + "?brokers=" + kafkaBrokers
-                + "&groupId=document-storage-pdf"  // Unique consumer group per step
+                + "&groupId=" + groupId
                 + "&autoOffsetReset=" + autoOffsetReset
                 + "&autoCommitEnable=false"
                 + "&maxPollRecords=" + maxPollRecords
                 + "&consumersCount=" + consumersCount)
-                .routeId("saga-pdf-storage-command")
-                .log("Received PDF storage command: partition=${header[kafka.PARTITION]}, offset=${header[kafka.OFFSET]}")
-                .unmarshal().json(JsonLibrary.Jackson, ProcessPdfStorageCommand.class)
+                .routeId(routeId)
+                .log("Received " + logLabel + ": partition=${header[kafka.PARTITION]}, offset=${header[kafka.OFFSET]}")
+                .unmarshal().json(JsonLibrary.Jackson, commandClass)
                 .process(exchange -> {
-                    ProcessPdfStorageCommand cmd = exchange.getIn().getBody(ProcessPdfStorageCommand.class);
-                    log.info("Processing PDF storage command for saga: {}, document: {}",
-                            cmd.getSagaId(), cmd.getDocumentId());
-                    sagaCommandUseCase.handleProcessCommand(cmd);
+                    T cmd = exchange.getIn().getBody(commandClass);
+                    log.info("Processing " + logLabel + " for saga: {}", cmd.getSagaId());
+                    handler.handle(cmd);
                 })
-                .log("Successfully processed PDF storage command");
-
-        // Consume CompensatePdfStorageCommand from orchestrator (PDF_STORAGE compensation)
-        from("kafka:" + sagaCompensationPdfStorageTopic
-                + "?brokers=" + kafkaBrokers
-                + "&groupId=document-storage-pdf-compensation"  // Unique consumer group
-                + "&autoOffsetReset=" + autoOffsetReset
-                + "&autoCommitEnable=false"
-                + "&maxPollRecords=" + maxPollRecords
-                + "&consumersCount=" + consumersCount)
-                .routeId("saga-pdf-storage-compensation")
-                .log("Received PDF compensation command: partition=${header[kafka.PARTITION]}, offset=${header[kafka.OFFSET]}")
-                .unmarshal().json(JsonLibrary.Jackson, CompensatePdfStorageCommand.class)
-                .process(exchange -> {
-                    CompensatePdfStorageCommand cmd = exchange.getIn().getBody(CompensatePdfStorageCommand.class);
-                    log.info("Processing PDF storage compensation for saga: {}, document: {}",
-                            cmd.getSagaId(), cmd.getDocumentId());
-                    sagaCommandUseCase.handleCompensation(cmd);
-                })
-                .log("Successfully processed PDF storage compensation command");
+                .log("Successfully processed " + logLabel);
     }
 }
