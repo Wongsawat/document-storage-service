@@ -1,5 +1,6 @@
 package com.wpanther.storage.infrastructure.config.metrics;
 
+import com.wpanther.storage.application.port.out.MetricsPort;
 import com.wpanther.storage.domain.model.DocumentType;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.Gauge;
@@ -40,7 +41,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * </pre>
  * </p>
  */
-public class DocumentStorageMetricsService {
+public class DocumentStorageMetricsService implements MetricsPort {
 
     private static final Logger log = LoggerFactory.getLogger(DocumentStorageMetricsService.class);
 
@@ -167,6 +168,7 @@ public class DocumentStorageMetricsService {
      *
      * @param documentType the type of document stored
      */
+    @Override
     public void recordDocumentStored(DocumentType documentType) {
         Counter.builder("document_storage_stored_total")
                 .description("Total number of documents stored")
@@ -182,6 +184,7 @@ public class DocumentStorageMetricsService {
     /**
      * Record a document deletion operation.
      */
+    @Override
     public void recordDocumentDeleted() {
         documentDeletedCounter.increment();
         log.debug("Recorded document deleted metric");
@@ -215,10 +218,12 @@ public class DocumentStorageMetricsService {
      * }
      * </pre>
      *
-     * @return Timer.Sample that records elapsed time on close
+     * @return an AutoCloseable that records elapsed time on close
      */
-    public Timer.Sample timeStorageOperation() {
-        return Timer.start(meterRegistry);
+    @Override
+    public Runnable timeStorageOperation() {
+        Timer.Sample sample = Timer.start(meterRegistry);
+        return () -> sample.stop(storageOperationTimer);
     }
 
     /**

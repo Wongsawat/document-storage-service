@@ -4,7 +4,8 @@ import com.wpanther.storage.domain.model.*;
 import com.wpanther.storage.domain.repository.DocumentRepositoryPort;
 import com.wpanther.storage.domain.exception.*;
 import com.wpanther.storage.application.port.out.StorageProviderPort;
-import com.wpanther.storage.infrastructure.config.metrics.DocumentStorageMetricsService;
+import com.wpanther.storage.application.port.out.MetricsPort;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -20,6 +21,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.*;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
@@ -35,10 +37,15 @@ class FileStorageDomainServiceTest {
     private DocumentRepositoryPort documentRepository;
 
     @Mock
-    private DocumentStorageMetricsService metrics;
+    private MetricsPort metrics;
 
     @InjectMocks
     private FileStorageDomainService service;
+
+    @BeforeEach
+    void setUp() {
+        lenient().when(metrics.timeStorageOperation()).thenReturn(() -> {});
+    }
 
     @Nested
     @DisplayName("storeDocument()")

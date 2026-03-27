@@ -3,10 +3,9 @@ package com.wpanther.storage.application.usecase;
 import com.wpanther.storage.domain.model.*;
 import com.wpanther.storage.domain.repository.DocumentRepositoryPort;
 import com.wpanther.storage.application.port.out.StorageProviderPort;
+import com.wpanther.storage.application.port.out.MetricsPort;
 import com.wpanther.storage.domain.exception.*;
 import com.wpanther.storage.domain.util.ContentTypeUtil;
-import com.wpanther.storage.infrastructure.config.metrics.DocumentStorageMetricsService;
-import io.micrometer.core.instrument.Timer;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,11 +25,11 @@ public class FileStorageDomainService implements DocumentStorageUseCase {
 
     private final StorageProviderPort storageProvider;
     private final DocumentRepositoryPort documentRepository;
-    private final DocumentStorageMetricsService metrics;
+    private final MetricsPort metrics;
 
     public FileStorageDomainService(StorageProviderPort storageProvider,
                                      DocumentRepositoryPort documentRepository,
-                                     DocumentStorageMetricsService metrics) {
+                                     MetricsPort metrics) {
         this.storageProvider = storageProvider;
         this.documentRepository = documentRepository;
         this.metrics = metrics;
@@ -51,7 +50,7 @@ public class FileStorageDomainService implements DocumentStorageUseCase {
             throw new InvalidDocumentException("Document content cannot be empty");
         }
 
-        Timer.Sample timer = metrics.timeStorageOperation();
+        Runnable timer = metrics.timeStorageOperation();
 
         try {
             String documentId = UUID.randomUUID().toString();
@@ -75,14 +74,13 @@ public class FileStorageDomainService implements DocumentStorageUseCase {
 
             StoredDocument savedDocument = documentRepository.save(document);
 
-            // Record metrics
             metrics.recordDocumentStored(type);
-            metrics.stopStorageOperation(timer);
 
             return savedDocument;
         } catch (Exception e) {
-            metrics.stopStorageOperation(timer);
             throw e;
+        } finally {
+            timer.run();
         }
     }
 
