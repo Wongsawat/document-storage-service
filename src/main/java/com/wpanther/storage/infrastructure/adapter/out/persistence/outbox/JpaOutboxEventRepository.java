@@ -70,6 +70,11 @@ public class JpaOutboxEventRepository implements OutboxEventRepository, OutboxRe
     }
 
     @Override
+    public long countByStatus(OutboxStatus status) {
+        return springRepository.countByStatus(status);
+    }
+
+    @Override
     public int deletePublishedBefore(Instant before) {
         int deletedCount = springRepository.deletePublishedBefore(before);
         log.info("Deleted {} published events before: {}", deletedCount, before);

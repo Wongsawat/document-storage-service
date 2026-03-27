@@ -29,13 +29,11 @@ public class OutboxHealthIndicator implements HealthIndicator {
 
     private final OutboxRepositoryPort outboxRepository;
 
-    private static final int BATCH_SIZE = 100;
-
     @Override
     public Health health() {
         try {
-            long pendingCount = countPendingEvents();
-            long failedCount = countFailedEvents();
+            long pendingCount = outboxRepository.countByStatus(OutboxStatus.PENDING);
+            long failedCount = outboxRepository.countByStatus(OutboxStatus.FAILED);
 
             Health.Builder builder = pendingCount > 0
                     ? Health.unknown()
@@ -52,13 +50,5 @@ public class OutboxHealthIndicator implements HealthIndicator {
                     .withDetail("error", e.getMessage())
                     .build();
         }
-    }
-
-    private long countPendingEvents() {
-        return outboxRepository.findPendingEvents(BATCH_SIZE).size();
-    }
-
-    private long countFailedEvents() {
-        return outboxRepository.findFailedEvents(BATCH_SIZE).size();
     }
 }

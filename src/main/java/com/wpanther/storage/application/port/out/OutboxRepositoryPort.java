@@ -73,4 +73,16 @@ public interface OutboxRepositoryPort {
      * @return list of failed outbox events
      */
     List<OutboxEvent> findFailedEvents(int limit);
+
+    /**
+     * Count outbox events by status.
+     * <p>
+     * Efficient count query for health indicators — avoids loading
+     * full event objects when only the count is needed.
+     * </p>
+     *
+     * @param status the outbox status to count
+     * @return number of events with the given status
+     */
+    long countByStatus(com.wpanther.saga.domain.outbox.OutboxStatus status);
 }

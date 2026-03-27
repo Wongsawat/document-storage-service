@@ -59,6 +59,12 @@ public class MongoOutboxEventAdapter implements OutboxEventRepository, OutboxRep
     }
 
     @Override
+    public long countByStatus(OutboxStatus status) {
+        Query query = new Query(Criteria.where("status").is(status));
+        return mongoTemplate.count(query, COLLECTION);
+    }
+
+    @Override
     public int deletePublishedBefore(Instant before) {
         Query query = new Query(Criteria.where("status").is(OutboxStatus.PUBLISHED)
                 .and("publishedAt").lt(before));

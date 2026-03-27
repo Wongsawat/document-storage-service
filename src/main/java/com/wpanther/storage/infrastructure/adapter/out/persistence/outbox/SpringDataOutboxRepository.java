@@ -50,4 +50,7 @@ public interface SpringDataOutboxRepository extends JpaRepository<OutboxEventEnt
      */
     @Query("SELECT DISTINCT e.aggregateId FROM OutboxEventEntity e WHERE e.aggregateId IN :aggregateIds")
     List<String> findExistingAggregateIds(@Param("aggregateIds") Collection<String> aggregateIds);
+
+    @Query("SELECT COUNT(e) FROM OutboxEventEntity e WHERE e.status = :status")
+    long countByStatus(@Param("status") OutboxStatus status);
 }
