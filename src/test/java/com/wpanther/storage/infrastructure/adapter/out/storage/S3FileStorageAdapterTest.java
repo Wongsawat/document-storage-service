@@ -18,6 +18,8 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
@@ -53,6 +55,75 @@ class S3FileStorageAdapterTest {
             field.set(adapter, mockS3Client);
         } catch (Exception e) {
             throw new RuntimeException("Failed to inject mock S3Client", e);
+        }
+    }
+
+    @Nested
+    @DisplayName("Constructor validation")
+    class ConstructorValidationTests {
+
+        @Test
+        @DisplayName("Should reject empty access key")
+        void shouldRejectEmptyAccessKey() {
+            assertThatThrownBy(() -> new S3FileStorageAdapter(
+                    "test-bucket", "us-east-1", "", "test-secret-key", "", "", false))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessageContaining("S3 access key")
+                    .hasMessageContaining("AWS_ACCESS_KEY");
+        }
+
+        @Test
+        @DisplayName("Should reject blank access key")
+        void shouldRejectBlankAccessKey() {
+            assertThatThrownBy(() -> new S3FileStorageAdapter(
+                    "test-bucket", "us-east-1", "   ", "test-secret-key", "", "", false))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessageContaining("S3 access key");
+        }
+
+        @Test
+        @DisplayName("Should reject empty secret key")
+        void shouldRejectEmptySecretKey() {
+            assertThatThrownBy(() -> new S3FileStorageAdapter(
+                    "test-bucket", "us-east-1", "test-access-key", "", "", "", false))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessageContaining("S3 secret key")
+                    .hasMessageContaining("AWS_SECRET_KEY");
+        }
+
+        @Test
+        @DisplayName("Should reject blank secret key")
+        void shouldRejectBlankSecretKey() {
+            assertThatThrownBy(() -> new S3FileStorageAdapter(
+                    "test-bucket", "us-east-1", "test-access-key", "   ", "", "", false))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessageContaining("S3 secret key");
+        }
+
+        @Test
+        @DisplayName("Should reject empty bucket name")
+        void shouldRejectEmptyBucketName() {
+            assertThatThrownBy(() -> new S3FileStorageAdapter(
+                    "", "us-east-1", "test-access-key", "test-secret-key", "", "", false))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessageContaining("S3 bucket name")
+                    .hasMessageContaining("S3_BUCKET_NAME");
+        }
+
+        @Test
+        @DisplayName("Should reject blank bucket name")
+        void shouldRejectBlankBucketName() {
+            assertThatThrownBy(() -> new S3FileStorageAdapter(
+                    "   ", "us-east-1", "test-access-key", "test-secret-key", "", "", false))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessageContaining("S3 bucket name");
+        }
+
+        @Test
+        @DisplayName("Should accept valid S3 configuration")
+        void shouldAcceptValidConfig() {
+            // setUp() already creates a valid adapter
+            assertThat(adapter).isNotNull();
         }
     }
 

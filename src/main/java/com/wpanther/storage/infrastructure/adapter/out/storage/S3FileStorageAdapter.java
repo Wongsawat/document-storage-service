@@ -45,6 +45,7 @@ public class S3FileStorageAdapter implements StorageProviderPort {
         @Value("${app.storage.s3.endpoint:}") String endpoint,
         @Value("${app.storage.s3.path-style-access:false}") boolean pathStyleAccess
     ) {
+        validateS3Configuration(bucketName, accessKey, secretKey);
         this.bucketName = bucketName;
         this.baseUrl = baseUrl;
 
@@ -161,6 +162,25 @@ public class S3FileStorageAdapter implements StorageProviderPort {
         } catch (S3Exception e) {
             log.warn("Error checking file existence in S3: {}", storageLocation, e);
             return false;
+        }
+    }
+
+    /**
+     * Validate S3 configuration at construction time.
+     * Fails fast if required S3 credentials or bucket are missing.
+     */
+    private static void validateS3Configuration(String bucketName, String accessKey, String secretKey) {
+        if (bucketName == null || bucketName.isBlank()) {
+            throw new IllegalArgumentException(
+                "S3 bucket name is not configured. Set S3_BUCKET_NAME environment variable.");
+        }
+        if (accessKey == null || accessKey.isBlank()) {
+            throw new IllegalArgumentException(
+                "S3 access key is not configured. Set AWS_ACCESS_KEY environment variable.");
+        }
+        if (secretKey == null || secretKey.isBlank()) {
+            throw new IllegalArgumentException(
+                "S3 secret key is not configured. Set AWS_SECRET_KEY environment variable.");
         }
     }
 
