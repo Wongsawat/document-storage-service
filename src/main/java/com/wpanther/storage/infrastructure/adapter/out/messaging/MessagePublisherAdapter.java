@@ -36,101 +36,50 @@ public class MessagePublisherAdapter implements MessagePublisherPort {
 
     @Override
     public void publishEvent(DocumentStoredEvent event) {
-        try {
-            String payload = objectMapper.writeValueAsString(event);
-            OutboxEvent outbox = OutboxEvent.builder()
-                .id(UUID.randomUUID())
-                .aggregateId(event.getDocumentId())
-                .aggregateType("StoredDocument")
-                .eventType("DocumentStoredEvent")
-                .payload(payload)
-                .topic("document.stored")
-                .status(OutboxStatus.PENDING)
-                .createdAt(Instant.now())
-                .retryCount(0)
-                .build();
-
-            outboxRepository.save(outbox);
-            log.debug("Published DocumentStoredEvent for document: {}", event.getDocumentId());
-
-        } catch (Exception e) {
-            log.error("Failed to publish DocumentStoredEvent", e);
-            throw new StorageFailedException("Failed to publish event", e);
-        }
+        saveToOutbox(event.getDocumentId(), "StoredDocument", "DocumentStoredEvent",
+                "document.stored", "event", event);
     }
 
     @Override
     public void publishReply(DocumentStorageReplyEvent reply) {
-        try {
-            String payload = objectMapper.writeValueAsString(reply);
-            OutboxEvent outbox = OutboxEvent.builder()
-                .id(UUID.randomUUID())
-                .aggregateId(reply.getSagaId())
-                .aggregateType("DocumentStorageSaga")
-                .eventType("DocumentStorageReplyEvent")
-                .payload(payload)
-                .topic("saga.reply.document-storage")
-                .status(OutboxStatus.PENDING)
-                .createdAt(Instant.now())
-                .retryCount(0)
-                .build();
-
-            outboxRepository.save(outbox);
-            log.debug("Published DocumentStorageReplyEvent for saga: {}", reply.getSagaId());
-
-        } catch (Exception e) {
-            log.error("Failed to publish DocumentStorageReplyEvent", e);
-            throw new StorageFailedException("Failed to publish reply", e);
-        }
+        saveToOutbox(reply.getSagaId(), "DocumentStorageSaga", "DocumentStorageReplyEvent",
+                "saga.reply.document-storage", "reply", reply);
     }
 
     @Override
     public void publishReply(SignedXmlStorageReplyEvent reply) {
-        try {
-            String payload = objectMapper.writeValueAsString(reply);
-            OutboxEvent outbox = OutboxEvent.builder()
-                .id(UUID.randomUUID())
-                .aggregateId(reply.getSagaId())
-                .aggregateType("SignedXmlStorageSaga")
-                .eventType("SignedXmlStorageReplyEvent")
-                .payload(payload)
-                .topic("saga.reply.signedxml-storage")
-                .status(OutboxStatus.PENDING)
-                .createdAt(Instant.now())
-                .retryCount(0)
-                .build();
-
-            outboxRepository.save(outbox);
-            log.debug("Published SignedXmlStorageReplyEvent for saga: {}", reply.getSagaId());
-
-        } catch (Exception e) {
-            log.error("Failed to publish SignedXmlStorageReplyEvent", e);
-            throw new StorageFailedException("Failed to publish reply", e);
-        }
+        saveToOutbox(reply.getSagaId(), "SignedXmlStorageSaga", "SignedXmlStorageReplyEvent",
+                "saga.reply.signedxml-storage", "reply", reply);
     }
 
     @Override
     public void publishReply(PdfStorageReplyEvent reply) {
+        saveToOutbox(reply.getSagaId(), "PdfStorageSaga", "PdfStorageReplyEvent",
+                "saga.reply.pdf-storage", "reply", reply);
+    }
+
+    private void saveToOutbox(String aggregateId, String aggregateType, String eventType,
+                              String topic, String logLabel, Object payloadSource) {
         try {
-            String payload = objectMapper.writeValueAsString(reply);
+            String payload = objectMapper.writeValueAsString(payloadSource);
             OutboxEvent outbox = OutboxEvent.builder()
                 .id(UUID.randomUUID())
-                .aggregateId(reply.getSagaId())
-                .aggregateType("PdfStorageSaga")
-                .eventType("PdfStorageReplyEvent")
+                .aggregateId(aggregateId)
+                .aggregateType(aggregateType)
+                .eventType(eventType)
                 .payload(payload)
-                .topic("saga.reply.pdf-storage")
+                .topic(topic)
                 .status(OutboxStatus.PENDING)
                 .createdAt(Instant.now())
                 .retryCount(0)
                 .build();
 
             outboxRepository.save(outbox);
-            log.debug("Published PdfStorageReplyEvent for saga: {}", reply.getSagaId());
+            log.debug("Published {} for: {}", logLabel, aggregateId);
 
         } catch (Exception e) {
-            log.error("Failed to publish PdfStorageReplyEvent", e);
-            throw new StorageFailedException("Failed to publish reply", e);
+            log.error("Failed to publish {}", logLabel, e);
+            throw new StorageFailedException("Failed to publish " + logLabel.toLowerCase(), e);
         }
     }
 }
