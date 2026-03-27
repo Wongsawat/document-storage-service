@@ -268,9 +268,10 @@ class SagaOrchestrationServiceTest {
             verify(storageService).storeDocument(eq(pdfContent), anyString(), eq(DocumentType.UNSIGNED_PDF), eq(documentId));
             ArgumentCaptor<PdfStorageReplyEvent> replyCaptor = ArgumentCaptor.forClass(PdfStorageReplyEvent.class);
             verify(messagePublisher).publishReply(replyCaptor.capture());
-            assertEquals("saga-789", replyCaptor.getValue().getSagaId());
-            assertEquals("stored-789", replyCaptor.getValue().getStoredDocumentId());
-            assertNotNull(replyCaptor.getValue().getStoredDocumentUrl());
+            PdfStorageReplyEvent reply = replyCaptor.getValue();
+            assertEquals("saga-789", reply.getSagaId());
+            assertEquals("stored-789", reply.getStoredDocumentId());
+            assertEquals("/api/v1/documents/stored-789", reply.getStoredDocumentUrl());
         }
 
         @Test
@@ -304,8 +305,10 @@ class SagaOrchestrationServiceTest {
             verify(pdfDownloadPort, never()).downloadPdf(anyString());
             ArgumentCaptor<PdfStorageReplyEvent> replyCaptor = ArgumentCaptor.forClass(PdfStorageReplyEvent.class);
             verify(messagePublisher).publishReply(replyCaptor.capture());
-            assertEquals("saga-789", replyCaptor.getValue().getSagaId());
-            assertEquals("existing-789", replyCaptor.getValue().getStoredDocumentId());
+            PdfStorageReplyEvent reply = replyCaptor.getValue();
+            assertEquals("saga-789", reply.getSagaId());
+            assertEquals("existing-789", reply.getStoredDocumentId());
+            assertEquals("/api/v1/documents/existing-789", reply.getStoredDocumentUrl());
         }
     }
 

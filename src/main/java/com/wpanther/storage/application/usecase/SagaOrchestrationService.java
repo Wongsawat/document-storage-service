@@ -202,7 +202,7 @@ public class SagaOrchestrationService implements SagaCommandUseCase {
             );
 
             // 5. Publish reply with storedDocumentUrl for SIGN_PDF step
-            String storedUrl = "/api/v1/documents/" + stored.getId() + "/download";
+            String storedUrl = "/api/v1/documents/" + stored.getId();
             PdfStorageReplyEvent reply = PdfStorageReplyEvent.success(
                 command.getSagaId(),
                 command.getSagaStep(),
@@ -311,7 +311,7 @@ public class SagaOrchestrationService implements SagaCommandUseCase {
 
         if (doc.isPresent()) {
             StoredDocument stored = doc.get();
-            String storedUrl = "/api/v1/documents/" + stored.getId() + "/download";
+            String storedUrl = "/api/v1/documents/" + stored.getId();
             PdfStorageReplyEvent reply = PdfStorageReplyEvent.success(
                 command.getSagaId(),
                 command.getSagaStep(),
