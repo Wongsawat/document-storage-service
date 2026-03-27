@@ -29,11 +29,11 @@ public class StoredDocument {
 
     // Timestamps
     private final LocalDateTime createdAt;
-    private LocalDateTime expiresAt;
+    private final LocalDateTime expiresAt;
 
     // Metadata
-    private String invoiceId;
-    private String invoiceNumber;
+    private final String invoiceId;
+    private final String invoiceNumber;
 
     private StoredDocument(Builder builder) {
         this.id = Objects.requireNonNull(builder.id, "Document ID is required");
@@ -70,10 +70,24 @@ public class StoredDocument {
     }
 
     /**
-     * Set expiration date
+     * Create a copy of this document with a new expiration date.
+     * Preserves immutability by returning a new instance.
      */
-    public void setExpiresAt(LocalDateTime expiresAt) {
-        this.expiresAt = expiresAt;
+    public StoredDocument withExpiresAt(LocalDateTime expiresAt) {
+        return StoredDocument.builder()
+            .id(this.id)
+            .fileName(this.fileName)
+            .contentType(this.contentType)
+            .storagePath(this.storagePath)
+            .storageUrl(this.storageUrl)
+            .fileSize(this.fileSize)
+            .checksum(this.checksum)
+            .documentType(this.documentType)
+            .createdAt(this.createdAt)
+            .expiresAt(expiresAt)
+            .invoiceId(this.invoiceId)
+            .invoiceNumber(this.invoiceNumber)
+            .build();
     }
 
     /**
