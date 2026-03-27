@@ -81,8 +81,8 @@ services:
   # Document Storage Service
   document-storage-service:
     build:
-      context: .
-      dockerfile: Dockerfile
+      context: ../../..
+      dockerfile: invoice-microservices/services/document-storage-service/Dockerfile
     image: document-storage-service:latest
     container_name: document-storage-service
     hostname: document-storage

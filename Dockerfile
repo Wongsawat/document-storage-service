@@ -1,15 +1,32 @@
 # Multi-stage build for Document Storage Service
+#
+# Build from the monorepo root (etax/) to include sibling dependencies:
+#   docker build -f invoice-microservices/services/document-storage-service/Dockerfile .
+#
+# Stage 1: Build saga-commons library (dependency)
+FROM maven:3.9-eclipse-temurin-21-alpine AS build-saga-commons
+
+WORKDIR /saga-commons
+COPY saga-commons/pom.xml .
+RUN mvn dependency:go-offline -B
+COPY saga-commons/src ./src
+RUN mvn clean install -DskipTests -B
+
+# Stage 2: Build document-storage-service
 FROM maven:3.9-eclipse-temurin-21-alpine AS build
 
 WORKDIR /app
 
+# Copy saga-commons from previous build stage into local Maven repo
+COPY --from=build-saga-commons /root/.m2/repository/com/wpanther/saga-commons /root/.m2/repository/com/wpanther/saga-commons
+
 # Copy pom.xml and download dependencies (for caching)
-COPY pom.xml .
+COPY invoice-microservices/services/document-storage-service/pom.xml .
 RUN mvn dependency:go-offline -B
 
 # Copy source code and build
-COPY src ./src
-RUN mvn clean package -DskipTests
+COPY invoice-microservices/services/document-storage-service/src ./src
+RUN mvn clean package -DskipTests -B
 
 # Runtime stage
 FROM eclipse-temurin:21-jre-alpine
