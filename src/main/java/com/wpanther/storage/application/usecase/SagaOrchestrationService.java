@@ -230,18 +230,20 @@ public class SagaOrchestrationService implements SagaCommandUseCase {
         log.info("Handling CompensateDocumentStorageCommand for saga: {}, document: {}",
                  command.getSagaId(), command.getDocumentId());
 
-        // Idempotent deletion - delete all documents for the invoice
-        List<StoredDocument> documents = storageService.getDocumentsByInvoice(command.getDocumentId());
-
-        for (StoredDocument doc : documents) {
-            try {
-                storageService.deleteDocument(doc.getId());
-                log.info("Compensated document storage: {} for saga: {}", doc.getId(), command.getSagaId());
-            } catch (Exception e) {
-                log.warn("Failed to delete document: {} during compensation for saga: {}",
-                         doc.getId(), command.getSagaId(), e);
-            }
-        }
+        // Delete only INVOICE_PDF documents (this step's own type).
+        // SIGNEDXML and PDF_STORAGE compensations handle their own types.
+        storageService.getDocumentsByInvoice(command.getDocumentId())
+            .stream()
+            .filter(doc -> doc.getDocumentType() == DocumentType.INVOICE_PDF)
+            .forEach(doc -> {
+                try {
+                    storageService.deleteDocument(doc.getId());
+                    log.info("Compensated document storage: {} for saga: {}", doc.getId(), command.getSagaId());
+                } catch (Exception e) {
+                    log.warn("Failed to delete document: {} during compensation for saga: {}",
+                             doc.getId(), command.getSagaId(), e);
+                }
+            });
 
         log.info("Completed compensation for saga: {}", command.getSagaId());
     }

@@ -317,10 +317,10 @@ class SagaOrchestrationServiceTest {
     class CompensateDocumentStorageTests {
 
         @Test
-        @DisplayName("Should delete all documents for invoice")
-        void shouldDeleteAllDocumentsForInvoice() {
+        @DisplayName("Should delete only INVOICE_PDF documents for invoice")
+        void shouldDeleteOnlyInvoicePdfDocumentsForInvoice() {
             String documentId = "doc-999";
-            StoredDocument doc1 = StoredDocument.builder()
+            StoredDocument invoicePdf = StoredDocument.builder()
                 .id("doc-1")
                 .invoiceId(documentId)
                 .fileName("file1.pdf")
@@ -331,7 +331,7 @@ class SagaOrchestrationServiceTest {
                 .checksum("aaa111")
                 .documentType(DocumentType.INVOICE_PDF)
                 .build();
-            StoredDocument doc2 = StoredDocument.builder()
+            StoredDocument signedXml = StoredDocument.builder()
                 .id("doc-2")
                 .invoiceId(documentId)
                 .fileName("file2.xml")
@@ -342,19 +342,32 @@ class SagaOrchestrationServiceTest {
                 .checksum("bbb222")
                 .documentType(DocumentType.SIGNED_XML)
                 .build();
+            StoredDocument unsignedPdf = StoredDocument.builder()
+                .id("doc-3")
+                .invoiceId(documentId)
+                .fileName("file3.pdf")
+                .contentType("application/pdf")
+                .storagePath("/path/file3.pdf")
+                .storageUrl("http://localhost:8084/api/v1/documents/doc-3")
+                .fileSize((long)2048)
+                .checksum("ddd444")
+                .documentType(DocumentType.UNSIGNED_PDF)
+                .build();
 
             CompensateDocumentStorageCommand command = new CompensateDocumentStorageCommand(
                 "saga-999", SagaStep.STORE_DOCUMENT, "corr-999",
                 SagaStep.STORE_DOCUMENT, documentId, "INVOICE_PDF"
             );
 
-            when(storageService.getDocumentsByInvoice(documentId)).thenReturn(List.of(doc1, doc2));
+            when(storageService.getDocumentsByInvoice(documentId))
+                .thenReturn(List.of(invoicePdf, signedXml, unsignedPdf));
             doNothing().when(storageService).deleteDocument(anyString());
 
             service.handleCompensation(command);
 
             verify(storageService).deleteDocument("doc-1");
-            verify(storageService).deleteDocument("doc-2");
+            verify(storageService, never()).deleteDocument("doc-2");
+            verify(storageService, never()).deleteDocument("doc-3");
         }
 
         @Test
@@ -380,9 +393,9 @@ class SagaOrchestrationServiceTest {
             StoredDocument doc1 = StoredDocument.builder()
                 .id("doc-1")
                 .invoiceId(documentId)
-                .fileName("file1.pdf")
+                .fileName("invoice1.pdf")
                 .contentType("application/pdf")
-                .storagePath("/path/file1.pdf")
+                .storagePath("/path/invoice1.pdf")
                 .storageUrl("http://localhost:8084/api/v1/documents/doc-1")
                 .fileSize((long)1024)
                 .checksum("aaa111")
@@ -391,13 +404,13 @@ class SagaOrchestrationServiceTest {
             StoredDocument doc2 = StoredDocument.builder()
                 .id("doc-2")
                 .invoiceId(documentId)
-                .fileName("file2.xml")
-                .contentType("application/xml")
-                .storagePath("/path/file2.xml")
+                .fileName("invoice2.pdf")
+                .contentType("application/pdf")
+                .storagePath("/path/invoice2.pdf")
                 .storageUrl("http://localhost:8084/api/v1/documents/doc-2")
-                .fileSize((long)512)
+                .fileSize((long)2048)
                 .checksum("bbb222")
-                .documentType(DocumentType.SIGNED_XML)
+                .documentType(DocumentType.INVOICE_PDF)
                 .build();
 
             CompensateDocumentStorageCommand command = new CompensateDocumentStorageCommand(
