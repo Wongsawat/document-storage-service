@@ -213,6 +213,52 @@ class JwtServiceTest {
     }
 
     @Nested
+    @DisplayName("Constructor validation")
+    class ConstructorValidationTests {
+
+        @Test
+        @DisplayName("Should reject null secret at construction")
+        void shouldRejectNullSecret() {
+            assertThatThrownBy(() -> new JwtService(null, 86400000L, 604800000L, tokenBlacklistService))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessageContaining("JWT secret is not configured");
+        }
+
+        @Test
+        @DisplayName("Should reject blank secret at construction")
+        void shouldRejectBlankSecret() {
+            assertThatThrownBy(() -> new JwtService("   ", 86400000L, 604800000L, tokenBlacklistService))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessageContaining("JWT secret is not configured");
+        }
+
+        @Test
+        @DisplayName("Should reject non-base64 secret at construction")
+        void shouldRejectNonBase64Secret() {
+            assertThatThrownBy(() -> new JwtService("not-base64!@#", 86400000L, 604800000L, tokenBlacklistService))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessageContaining("valid base64");
+        }
+
+        @Test
+        @DisplayName("Should reject weak secret at construction")
+        void shouldRejectWeakSecret() {
+            // 16-byte secret = 128 bits, below 256-bit minimum
+            String weakSecret = java.util.Base64.getEncoder().encodeToString(new byte[16]);
+            assertThatThrownBy(() -> new JwtService(weakSecret, 86400000L, 604800000L, tokenBlacklistService))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessageContaining("256 bits");
+        }
+
+        @Test
+        @DisplayName("Should accept valid 256-bit secret at construction")
+        void shouldAcceptValidSecret() {
+            // Should not throw — setUp() already uses a valid secret
+            assertThat(jwtService).isNotNull();
+        }
+    }
+
+    @Nested
     @DisplayName("extractClaim() Tests")
     class ExtractClaimTests {
 

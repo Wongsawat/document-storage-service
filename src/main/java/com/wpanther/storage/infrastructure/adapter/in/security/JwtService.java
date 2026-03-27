@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import javax.crypto.SecretKey;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.Base64;
 import java.util.Date;
 import java.util.Map;
 import java.util.function.Function;
@@ -45,10 +46,33 @@ public class JwtService {
             @Value("${app.security.jwt.expiration:86400000}") long jwtExpiration,
             @Value("${app.security.jwt.refresh-expiration:604800000}") long refreshExpiration,
             TokenBlacklistService tokenBlacklistService) {
+        validateSecretKey(secretKey);
         this.secretKey = secretKey;
         this.jwtExpiration = jwtExpiration;
         this.refreshExpiration = refreshExpiration;
         this.tokenBlacklistService = tokenBlacklistService;
+    }
+
+    private static void validateSecretKey(String secretKey) {
+        if (secretKey == null || secretKey.isBlank()) {
+            throw new IllegalArgumentException(
+                "JWT secret is not configured. Set JWT_SECRET environment variable. " +
+                "The secret must be at least 256 bits (32 bytes) when base64-decoded.");
+        }
+        byte[] decoded;
+        try {
+            decoded = Base64.getDecoder().decode(secretKey);
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException(
+                "JWT secret must be a valid base64-encoded string. " +
+                "Generate a secure secret with: openssl rand -base64 64");
+        }
+        if (decoded.length < 32) {
+            throw new IllegalArgumentException(
+                "JWT secret is too weak. Must be at least 256 bits (32 bytes) after base64 decoding. " +
+                "Current length: " + decoded.length + " bytes. " +
+                "Generate a secure secret with: openssl rand -base64 64");
+        }
     }
 
     /**
