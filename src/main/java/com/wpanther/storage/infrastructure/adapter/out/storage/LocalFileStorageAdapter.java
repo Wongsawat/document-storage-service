@@ -69,9 +69,9 @@ public class LocalFileStorageAdapter implements StorageProviderPort {
 
     @Override
     public InputStream retrieve(String storageLocation) throws StorageException {
-        try {
-            Path filePath = Paths.get(storageLocation);
+        Path filePath = validateAndResolvePath(storageLocation);
 
+        try {
             if (!Files.exists(filePath)) {
                 throw new StorageException("File not found: " + storageLocation);
             }
@@ -87,9 +87,9 @@ public class LocalFileStorageAdapter implements StorageProviderPort {
 
     @Override
     public void delete(String storageLocation) throws StorageException {
-        try {
-            Path filePath = Paths.get(storageLocation);
+        Path filePath = validateAndResolvePath(storageLocation);
 
+        try {
             if (Files.exists(filePath)) {
                 Files.delete(filePath);
                 log.info("Deleted file: {}", storageLocation);
@@ -105,7 +105,34 @@ public class LocalFileStorageAdapter implements StorageProviderPort {
 
     @Override
     public boolean exists(String storageLocation) {
-        return Files.exists(Paths.get(storageLocation));
+        try {
+            Path filePath = validateAndResolvePath(storageLocation);
+            return Files.exists(filePath);
+        } catch (StorageException e) {
+            log.warn("Path traversal check failed for exists(): {}", storageLocation);
+            return false;
+        }
+    }
+
+    /**
+     * Validate that the storage location resolves to a path within the configured basePath.
+     * Prevents path traversal attacks where a tampered storageLocation could access
+     * files outside the storage directory.
+     *
+     * @param storageLocation the path to validate
+     * @return the resolved absolute path
+     * @throws StorageException if the path is outside basePath
+     */
+    private Path validateAndResolvePath(String storageLocation) throws StorageException {
+        Path resolved = Paths.get(storageLocation).toAbsolutePath().normalize();
+        Path normalizedBase = Paths.get(basePath).toAbsolutePath().normalize();
+
+        if (!resolved.startsWith(normalizedBase)) {
+            log.warn("Path traversal attempt detected: {} resolves outside basePath {}", storageLocation, basePath);
+            throw new StorageException("Storage location is outside permitted directory: " + storageLocation);
+        }
+
+        return resolved;
     }
 
     /**

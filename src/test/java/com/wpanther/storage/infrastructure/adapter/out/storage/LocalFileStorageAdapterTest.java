@@ -138,6 +138,53 @@ class LocalFileStorageAdapterTest {
     }
 
     @Nested
+    @DisplayName("Path traversal prevention")
+    class PathTraversalTests {
+
+        @Test
+        @DisplayName("Should reject retrieve() with path traversal attempt")
+        void shouldRejectRetrieveWithTraversal() {
+            String traversalPath = tempDir.resolve("../../../etc/passwd").toString();
+
+            assertThrows(StorageException.class, () -> adapter.retrieve(traversalPath));
+        }
+
+        @Test
+        @DisplayName("Should reject retrieve() with absolute path outside basePath")
+        void shouldRejectRetrieveWithAbsolutePathOutsideBase() {
+            assertThrows(StorageException.class, () -> adapter.retrieve("/etc/passwd"));
+        }
+
+        @Test
+        @DisplayName("Should reject delete() with path traversal attempt")
+        void shouldRejectDeleteWithTraversal() {
+            String traversalPath = tempDir.resolve("../../../etc/passwd").toString();
+
+            assertThrows(StorageException.class, () -> adapter.delete(traversalPath));
+        }
+
+        @Test
+        @DisplayName("Should reject delete() with absolute path outside basePath")
+        void shouldRejectDeleteWithAbsolutePathOutsideBase() {
+            assertThrows(StorageException.class, () -> adapter.delete("/etc/shadow"));
+        }
+
+        @Test
+        @DisplayName("Should reject exists() with path traversal attempt")
+        void shouldRejectExistsWithTraversal() {
+            String traversalPath = tempDir.resolve("../../../etc/passwd").toString();
+
+            assertFalse(adapter.exists(traversalPath));
+        }
+
+        @Test
+        @DisplayName("Should return false for exists() with absolute path outside basePath")
+        void shouldReturnFalseForExistsOutsideBase() {
+            assertFalse(adapter.exists("/etc/passwd"));
+        }
+    }
+
+    @Nested
     @DisplayName("retrieve()")
     class RetrieveTests {
 
