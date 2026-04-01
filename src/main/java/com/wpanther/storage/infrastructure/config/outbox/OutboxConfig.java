@@ -1,7 +1,10 @@
 package com.wpanther.storage.infrastructure.config.outbox;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.wpanther.saga.domain.outbox.OutboxEventRepository;
+import com.wpanther.saga.infrastructure.outbox.OutboxService;
 import com.wpanther.storage.infrastructure.adapter.out.persistence.MongoOutboxEventAdapter;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.mongodb.core.MongoTemplate;
@@ -43,6 +46,12 @@ public class OutboxConfig {
      *
      * @return system UTC clock
      */
+    @Bean
+    @ConditionalOnMissingBean(OutboxService.class)
+    public OutboxService outboxService(OutboxEventRepository repository, ObjectMapper objectMapper) {
+        return new OutboxService(repository, objectMapper);
+    }
+
     @Bean
     public Clock clock() {
         return Clock.systemUTC();
